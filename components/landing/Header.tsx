@@ -11,8 +11,8 @@ import { Cancel } from "@/icons/Cancel";
 
 const NAV_LINKS = [
   { label: "Home", href: "#hero" },
-  { label: "Features", href: "#features" },
   { label: "How it works", href: "#how-it-works" },
+  { label: "Features", href: "#features" },
   { label: "Contact", href: "#contact" },
   { label: "Try it", href: "#try-it" },
 ];
