@@ -14,9 +14,11 @@ export default function Home() {
     <main className="relative max-w-[1920px] mx-auto">
       <Header />
 
-      <Hero />
-      <Features />
-      <HowItWork />
+      <section className="flex flex-col">
+        <Hero />
+        <HowItWork />
+        <Features />
+      </section>
       <Contact />
       <Footer />
 
