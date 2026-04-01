@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import Logo from "@/assets/images/cashflow-logo.webp";
 import { Button } from "../Button";
 import { BurgerBtn } from "../BurgerBtn";
@@ -14,7 +15,6 @@ const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works" },
   { label: "Features", href: "#features" },
   { label: "Contact", href: "#contact" },
-  { label: "Try it", href: "#try-it" },
 ];
 
 export function Header() {
@@ -94,12 +94,12 @@ export function Header() {
         </article>
 
         <article className="hidden lg:flex items-center gap-2">
-          <Button className="bg-transparent text-white border border-white px-2.5 py-1 rounded-full font-medium hover:bg-white hover:text-black transition-colors duration-300 text-[0.875rem]">
+          <Link href="/auth/login" className="bg-transparent text-white border border-white px-2.5 py-1 rounded-full font-medium hover:bg-white hover:text-black transition-colors duration-300 text-[0.875rem]">
             Login
-          </Button>
-          <Button className="bg-linear-to-r from-landing-primary to-[#13EA79] text-[#0b4124] hover:from-landing-primary/80 hover:to-[#13EA79]/80 px-2.5 py-1 rounded-full font-bold shadow-lg shadow-landing-primary/5 text-[0.875rem] whitespace-nowrap">
+          </Link>
+          <Link href="/auth/register" className="bg-linear-to-r from-landing-primary to-[#13EA79] text-[#0b4124] hover:from-landing-primary/80 hover:to-[#13EA79]/80 px-2.5 py-1 rounded-full font-bold shadow-lg shadow-landing-primary/5 text-[0.875rem] whitespace-nowrap">
             Sign Up
-          </Button>
+          </Link>
         </article>
 
         <BurgerBtn

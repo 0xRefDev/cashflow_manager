@@ -1,7 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
 import DashImage from "@/assets/images/dash.webp";
 
-import { Button } from "@/components/Button";
 import { Pill } from "@/components/Pill"
 
 import { ForwardArrow } from "@/icons/ForwardArrow";
@@ -32,14 +32,14 @@ export function Hero() {
           </p>
 
           <div className="flex flex-col items-center gap-2 lg:gap-4 mt-2 lg:mt-8 w-full">
-            <Button className="relative bg-[#32844e] text-white font-medium text-[17px] px-4 py-[0.35em] pl-5 h-[2.8em] rounded-[0.9em] flex items-center overflow-hidden cursor-pointer ">
+            <Link href="/auth/register" className="relative bg-[#32844e] text-white font-medium text-[17px] px-4 py-[0.35em] pl-5 h-[2.8em] rounded-[0.9em] flex items-center overflow-hidden cursor-pointer ">
               <span className="mr-10">Get started</span>
               <div
                 className="absolute right-[0.3rem] bg-white h-[2.2rem] w-[2.2rem] rounded-[0.7rem] flex items-center justify-center transition-all duration-300 active:scale-95"
               >
                 <ForwardArrow />
               </div>
-            </Button>
+            </Link>
             <p className="w-full text-xs text-center text-gray-400 font-inter">
               No credit card required ● Free plan forever
             </p>
