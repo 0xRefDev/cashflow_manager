@@ -4,7 +4,7 @@ import GlobalConn from "@/assets/images/global_connect.png";
 
 export function Features() {
   return (
-    <section id="features" className="w-full min-h-screen mx-auto pb-10">
+    <section id="features" className="w-full min-h-[80dvh] mx-auto pb-10">
       <article className="flex flex-col gap-2 items-center text-center">
         <h1 className="text-xl lg:text-3xl font-bold leading-tight tracking-tight font-manrope text-pretty w-full text-center">
           Beyond a standard tracker.{" "}
