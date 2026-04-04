@@ -13,7 +13,7 @@ export function Hero() {
       className="min-h-[80dvh] flex flex-col items-center pt-24 lg:pt-32 overflow-hidden pb-0"
     >
 
-      <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-size-[20px_40px] mask-[radial-gradient(ellipse_60%_16%_at_60%_0%,#000_50%,transparent_100%)]"></div>
+      <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-size-[20px_40px] mask-[radial-gradient(ellipse_75%_16%_at_65%_0%,#000_50%,transparent_100%)]"></div>
 
       <div className="hidden lg:block absolute right-0 top-1/4 -translate-y-1/2 w-[55%] h-[60%] bg-[#113b2c30] rounded-full blur-3xl pointer-events-none" />
 
