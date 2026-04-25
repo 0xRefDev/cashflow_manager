@@ -5,7 +5,7 @@ export function ForwardArrow(props: React.SVGProps<SVGSVGElement>) {
     width="24"
     height="24"
     {...props}
-    className="w-[1.1em] transition-transform duration-300 text-[#32844e] group-hover:translate-x-[0.1em]"
+    className="w-[1.1em] transition-transform duration-300 text-[#042b17] group-hover:translate-x-[0.1em]"
   >
     <path fill="none" d="M0 0h24v24H0z"></path>
     <path
