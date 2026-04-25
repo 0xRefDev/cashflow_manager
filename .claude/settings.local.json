@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(xargs cat *)",
+      "Bash(xargs grep *)"
+    ]
+  }
+}
