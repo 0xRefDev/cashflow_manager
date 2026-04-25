@@ -20,22 +20,22 @@ export function Contact() {
 
         <div className="flex-1 flex flex-col justify-between gap-8">
           <div className="space-y-5 text-center lg:text-left">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight animate-fade-down">
               Precision Support for your Financial Journey
             </h2>
 
-            <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-md mx-auto lg:mx-0">
+            <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-md mx-auto lg:mx-0 animate-fade-down animate-delay-200">
               Have questions about transitioning your assets to CashFlow?
             </p>
 
             <ul className="flex flex-col gap-2 text-sm sm:text-base text-white/60 max-w-md mx-auto lg:mx-0">
-              <li>• Architect your personal ledger with expert guidance</li>
-              <li>• Configure multi-currency wallets</li>
-              <li>• Optimize your savings strategy</li>
+              <li className="animate-fade-right animate-delay-400">• Architect your personal ledger with expert guidance</li>
+              <li className="animate-fade-right animate-delay-600">• Configure multi-currency wallets</li>
+              <li className="animate-fade-right animate-delay-800">• Optimize your savings strategy</li>
             </ul>
           </div>
 
-          <div className="flex items-center gap-4 group border border-white/5 rounded-2xl p-3 w-full sm:w-fit mx-auto lg:mx-0">
+          <div className="flex items-center gap-4 group border border-white/5 rounded-2xl p-3 w-full sm:w-fit mx-auto lg:mx-0 animate-fade-up animate-delay-400">
             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#4ade80] group-hover:bg-[#4ade80]/10 group-hover:border-[#4ade80]/30 transition-all duration-300">
               <Mail />
             </div>
@@ -50,8 +50,6 @@ export function Contact() {
 
         <div className="flex-1 w-full bg-black/40 p-6 sm:p-8 rounded-2xl border border-white/5 backdrop-blur-md">
           <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-
-            {/* Name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider">

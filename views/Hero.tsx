@@ -19,19 +19,19 @@ export function Hero() {
 
       <article className="relative z-10 w-full flex flex-col mx-auto select-none">
         <div className="flex flex-col gap-2 lg:gap-3 items-center text-center">
-          <Pill className="lg:text-[1rem] lg:px-4 lg:py-1">The Precision Ledger</Pill>
+          <Pill className="lg:text-[1rem] lg:px-4 lg:py-1.5 animate-fade-down">The Precision Ledger</Pill>
 
-          <h1 className="text-3xl lg:text-5xl font-bold leading-tight tracking-tight mt-1 lg:mt-0 font-manrope">
+          <h1 className="text-3xl lg:text-5xl font-bold leading-tight tracking-tight mt-1 lg:mt-0 font-manrope animate-fade-up animate-delay-200">
             Master Your{" "}
             <span className="text-landing-primary">Money</span>
           </h1>
 
-          <p className="text-sm lg:text-lg text-gray-300 leading-relaxed mt-1 lg:mt-0 max-w-xs lg:max-w-md text-pretty">
+          <p className="text-sm lg:text-lg text-gray-300 leading-relaxed mt-1 lg:mt-0 max-w-xs lg:max-w-md text-pretty animate-fade-up animate-delay-400">
             Navigate your financial journey with editorial clarity. Track every
             cent, forecast your growth, and achieve absolute fiscal sovereignty.
           </p>
 
-          <div className="flex flex-col items-center gap-2 lg:gap-4 mt-2 lg:mt-8 w-full">
+          <div className="flex flex-col items-center gap-2 lg:gap-4 mt-2 lg:mt-8 w-full animate-fade-up animate-delay-600">
             <Link href="/auth/register" className="relative bg-[#32844e] text-white font-medium text-[17px] px-4 py-[0.35em] pl-5 h-[2.8em] rounded-[0.9em] flex items-center overflow-hidden cursor-pointer ">
               <span className="mr-10">Get started</span>
               <div
@@ -40,12 +40,12 @@ export function Hero() {
                 <ForwardArrow />
               </div>
             </Link>
-            <p className="w-full text-xs text-center text-gray-400 font-inter">
+            <p className="w-full text-xs text-center text-gray-400 font-inter animate-fade-up animate-delay-800">
               No credit card required ● Free plan forever
             </p>
           </div>
 
-          <div className="relative w-full max-w-[1024px]">
+          <div className="relative w-full max-w-[1024px] animate-fade-up animate-delay-1000">
             <div className="relative">
               <Image
                 src={DashImage}
