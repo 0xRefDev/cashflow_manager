@@ -1,6 +1,11 @@
 import { jwtVerify, SignJWT } from "jose";
 
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+const rawSecret = process.env.JWT_SECRET;
+if (!rawSecret) {
+  throw new Error("JWT_SECRET environment variable is not defined. Cannot start the application.");
+}
+
+const SECRET = new TextEncoder().encode(rawSecret);
 
 export const verifyToken = async (token: string) => {
   try {

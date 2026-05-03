@@ -1,23 +1,40 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-dotenv.config();
 
-const MONGO_URI: string = process.env.MONGO_URI || "";
+const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
   throw new Error("Please define the MONGO_URI environment variable");
 }
 
-let cached = (global as any).mongoose || { conn: null, promise: null };
+let cached = (global as any).mongoose;
+
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
+}
 
 export async function connectDB() {
-  if (cached.conn) return cached.conn;
-
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGO_URI, { sanitizeFilter: true });
+  if (cached.conn) {
+    return cached.conn;
   }
 
-  cached.conn = await cached.promise;
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      sanitizeFilter: true,
+    };
+
+    cached.promise = mongoose.connect(MONGO_URI!, opts).then((mongoose) => {
+      console.log("=> New MongoDB Connection Established");
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
 
   return cached.conn;
 }
