@@ -1,11 +1,11 @@
 import mongoose, { Schema } from "mongoose";
 
 const Profile = new Schema({
-  profile_photo: { type: String, required: false },
-  occupation: { type: String, required: false },
-  description: { type: String, required: false },
-  country: { type: String, required: false },
-  birthday: { type: Date, required: false },
+  profile_photo: { type: String, required: false, default: "default_preset" },
+  occupation: { type: String, required: false, default: "" },
+  description: { type: String, required: false, default: "" },
+  country: { type: String, required: false, default: "" },
+  birthday: { type: Date, required: false, default: "" },
   userId: {
     type: Schema.Types.ObjectId,
     ref: "User",
@@ -15,7 +15,7 @@ const Profile = new Schema({
   reputationId: {
     type: Schema.Types.ObjectId,
     ref: "Reputation",
-    default: null,
+    default: "",
   },
 }, { timestamps: true });
 

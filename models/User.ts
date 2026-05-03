@@ -20,4 +20,6 @@ const User = new Schema({
 
 }, { timestamps: true });
 
+User.index({ status: 1 });
+
 export default mongoose.models.User || mongoose.model("User", User);
