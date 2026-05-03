@@ -1,5 +1,6 @@
 import "server-only";
 
+import { logger } from "@/lib/logger";
 import Currencies from "@/models/Currencies";
 
 export async function getAllCurrencies() {
@@ -7,22 +8,19 @@ export async function getAllCurrencies() {
     const currencies = await Currencies.find({});
     return currencies;
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(err);
-    throw new Error("Failed to get all currencies: " + errorMessage);
+    logger.error("Failed to get all currencies", err);
+    throw new Error("Failed to get all currencies");
   }
 }
 
-export async function getCurrencyByName(name:string) {
-  
+export async function getCurrencyByName(name: string) {
   if (!name) throw new Error("Currency name is required");
 
   try {
     const currency = await Currencies.findOne({ name });
     return currency;
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(err);
-    throw new Error("Failed to get currency by name: " + errorMessage);
+    logger.error("Failed to get currency by name", err, { name });
+    throw new Error("Failed to get currency by name");
   }
 }

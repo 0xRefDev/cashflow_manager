@@ -1,5 +1,6 @@
 import "server-only";
 
+import { logger } from "@/lib/logger";
 import Preferences from "@/models/Preferences";
 import Profile from "@/models/Profile";
 import Wallets from "@/models/Wallets";
@@ -8,7 +9,7 @@ import bcrypt from "bcrypt";
 import Reputation from "@/models/Reputation";
 import { signToken } from "@/lib/jose";
 import { sanitizeUser } from "@/utils/sanitizeUser";
-import { CreateUserInput, LoginInput, UpdateUserInput, DeleteUserInput, SetupInput } from "@/types/user.types";
+import { CreateUserInput, LoginInput, UpdateUserInput, DeleteUserInput, SetupInput, UserDocument } from "@/types/user.types";
 import { getCurrencyByName } from "@/services/server/currency.services";
 
 
@@ -112,7 +113,7 @@ export async function getUserByEmail(email: string) {
     return user;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(err);
+    logger.error("Service error", err);
     throw new Error("Failed to get user by email: " + errorMessage);
   }
 }
@@ -125,7 +126,7 @@ export async function getUserById(id: string) {
     return user;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(err);
+    logger.error("Service error", err);
     throw new Error("Failed to get user by id: " + errorMessage);
   }
 }
@@ -138,7 +139,7 @@ export async function getUserByUsername(username: string) {
     return user;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(err);
+    logger.error("Service error", err);
     throw new Error("Failed to get user by username: " + errorMessage);
   }
 }
@@ -149,7 +150,7 @@ export async function getAllUsers() {
     return users;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(err);
+    logger.error("Service error", err);
     throw new Error("Failed to get all users: " + errorMessage);
   }
 }
@@ -170,7 +171,7 @@ export async function loginUser(data: LoginInput) {
     const isValid = await bcrypt.compare(password, user.hashedPassword);
     if (!isValid) throw new Error("Invalid credentials");
 
-    const loggedUser = user.toObject();
+    const loggedUser = user.toObject() as UserDocument;
     const safeUser = sanitizeUser(loggedUser);
 
     const token = await signToken({
@@ -186,7 +187,7 @@ export async function loginUser(data: LoginInput) {
 
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(err);
+    logger.error("Service error", err);
     throw new Error(errorMessage);
   }
 }
@@ -205,7 +206,7 @@ export async function updateUser(data: UpdateUserInput) {
     return user;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(errorMessage);
+    logger.error("Service error", new Error(errorMessage));
     throw new Error("Failed to update user: " + errorMessage);
   }
 }
@@ -220,7 +221,7 @@ export async function deleteUser(data: DeleteUserInput) {
     return user;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    console.error(err);
+    logger.error("Service error", err);
     throw new Error("Failed to delete user: " + errorMessage);
   }
 }
