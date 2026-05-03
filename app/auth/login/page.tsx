@@ -27,6 +27,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 export default function Login() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
+  const setProfile = useAuthStore((s) => s.setProfile);
 
   const {
     register,
@@ -55,7 +56,11 @@ export default function Login() {
     try {
       const res = await authService.login(values);
       setUser(res.user);
-      router.push(res.user.completedSetup ? "/dashboard" : "/setup/step/onboarding");
+
+      const profile = await authService.getProfile();
+      setProfile(profile);
+
+      router.push(res.user.completedSetup ? "/app/dashboard" : "/setup/step/onboarding");
     } catch (error) {
       showError(
         "Authentication Failed",
