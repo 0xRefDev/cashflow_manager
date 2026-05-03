@@ -71,7 +71,7 @@ export default function Step1() {
   }
 
   useEffect(() => {
-    fetch('/api/currency')
+    fetch('/api/v1/currency')
       .then((res) => res.json())
       .then((data) => setCurrencies(data.currencies));
   }, []);
