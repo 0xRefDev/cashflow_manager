@@ -50,6 +50,31 @@ export interface GetAllUsersInput {
   limit?: number;
 }
 
+export interface UserDocument {
+  _id: string;
+  fullname: string;
+  username: string;
+  email: string;
+  hashedPassword: string;
+  gender: string;
+  completedSetup: boolean;
+  verified: boolean;
+  status: "active" | "suspended" | "deleted";
+  birthday?: string;
+  country?: string;
+  profile_photo?: string;
+  occupation?: string;
+  description?: string;
+  currency?: string;
+  profileId?: string;
+  preferencesId?: string;
+  walletId?: string;
+  movementsId?: string;
+  __v?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface UserResponse {
   _id: string;
   fullname: string;
