@@ -1,0 +1,102 @@
+import { Wallet } from "@/types/wallet.types";
+import { ChartComponent } from "./ChartComponent";
+import { getCurrencyIcon } from "@/utils/Currencies";
+import { GrowIndicator } from "@/icons/app/GrowIndicator";
+import { DecreaseIndicator } from "@/icons/app/DecreaseIndicator";
+
+export function WalletContainer({
+  wallet,
+  miniComponent
+}: { 
+  wallet: Wallet, 
+  miniComponent?: boolean
+}) {
+
+  const { name, balance, transactions, percentage, currencyId } = wallet;
+  const { name: currencyName, symbol } = currencyId;
+
+  const Icon = getCurrencyIcon(currencyName);
+
+  if (miniComponent) {
+    return (
+      <article className="relative flex flex-col w-[280px] h-[160px] rounded-lg border border-[#484847]/15 bg-[#0f0f0f]/60 backdrop-blur-md overflow-hidden group hover:border-landing-primary/20 transition-colors duration-300">
+        <div className="flex items-center px-4 pt-3 h-[60px]">
+          <div className="flex items-center gap-3">
+            <div className="bg-landing-primary/10 size-8 rounded-md flex justify-center items-center">
+              {Icon && <Icon className="size-4" />}
+            </div>
+
+            <div className="leading-tight">
+              <p className="text-sm text-[#ADAAAA] font-medium">{name}</p>
+              <p className="text-lg font-semibold">
+                {symbol}{balance}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 ml-auto">
+            <div className="text-right">
+              <p className={`text-sm flex items-center gap-1 font-medium ${percentage >= 0 ? 'text-landing-primary' : 'text-[#FF7351]'}`}>
+                {percentage >= 0 ? <GrowIndicator className="size-4 text-landing-primary" /> : <DecreaseIndicator className="size-4 text-[#FF7351]" />}
+                {percentage}%
+              </p>
+              <p className="text-xs text-[#ADAAAA]">7d</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mini chart */}
+        <div className="flex-1 px-2 pb-2 min-h-0">
+          {transactions?.length > 0 ? (
+            <ChartComponent
+              transactions={transactions}
+              height={70}
+            />
+          ) : (
+            <div className="h-[70px] rounded flex justify-center items-center">
+              <p className="text-white/30 text-xs">No data</p>
+            </div>
+          )}
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <article className="overflow-hidden bg-radial-[at_50%_95%] from-landing-primary/8 to-landing-primary/0 to-70% border border-[#484847]/5 rounded-lg shadow-2xl shadow-black/20 w-[20rem] h-[365px]">
+
+      <header className="px-6 pt-6 flex justify-between items-center">
+        <div className="bg-landing-primary/10 size-10 rounded-lg flex justify-center items-center">
+          {Icon && <Icon className="size-5" />}
+        </div>
+        <div>
+          <p className={`flex justify-end text-sm text-right ${percentage < 0 ? 'text-red-500' : 'text-landing-primary'} font-medium`}>
+            {percentage}%
+          </p>
+          <p className="text-sm text-[#ADAAAA] font-medium">Last 7 Days</p>
+        </div>
+      </header>
+
+      <div className="px-6 pt-4 font-manrope">
+        <p className="text-sm text-[#ADAAAA] font-normal">
+          {name} <span className="font-extrabold text-[16px]">/</span> Balance
+        </p>
+        <p className="text-2xl font-sans font-semibold">
+          {symbol}{balance}
+        </p>
+      </div>
+
+      <div className="px-6 pb-4">
+        {transactions?.length > 0 ? (
+          <ChartComponent transactions={transactions} />
+        ) : (
+          <div className="border border-landing-primary/15 bg-[#0f0f0f] h-[220px] mt-9 rounded-lg flex justify-center items-center">
+            <p className="text-white/40 font-manrope font-semibold mb-7">
+              No transactions found
+            </p>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
