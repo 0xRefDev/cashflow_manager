@@ -15,3 +15,24 @@ export interface UpdateBalance {
   userId: string;
   type: "income" | "expense";
 }
+
+export interface WalletTransaction {
+  title: string;
+  quantity: number;
+  date: string;
+  type: "income" | "expense";
+}
+
+export interface Wallet {
+  _id: string;
+  name: string;
+  description?: string;
+  balance: number;
+  percentage: number;
+  currencyId: {
+    _id: string;
+    name: string;
+    symbol: string;
+  };
+  transactions: WalletTransaction[];
+}
