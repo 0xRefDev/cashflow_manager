@@ -170,7 +170,11 @@ export async function getUserTransactions(userId: string, queryParams: URLSearch
         .sort({ date: -1 })
         .skip(skip)
         .limit(limit)
-        .populate('walletId', 'name description')
+        .populate({
+          path: 'walletId',
+          select: 'name description currencyId',
+          populate: { path: 'currencyId', select: 'name symbol' }
+        })
         .lean(),
       Movements.countDocuments(filters)
     ]);
@@ -195,7 +199,11 @@ export async function getTransactionById(id: string, userId: string) {
     if (!id || !userId) throw new Error("Invalid request");
 
     const transaction = await Movements.findOne({ _id: id, userId })
-      .populate("walletId", "name balance description")
+      .populate({
+        path: 'walletId',
+        select: 'name description currencyId',
+        populate: { path: 'currencyId', select: 'name symbol' }
+      })
       .lean();
 
     return transaction;
