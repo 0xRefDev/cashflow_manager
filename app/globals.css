@@ -1,8 +1,10 @@
 @import "tailwindcss";
+@import "tailwindcss-animated";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  font-display: swap;
 }
 
 @theme inline {
@@ -45,4 +47,10 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
