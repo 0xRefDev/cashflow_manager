@@ -1,3 +1,12 @@
+export interface WalletOption {
+  walletId: string;
+  wallet: string;
+  currencyId: string;
+  currency: string;
+  symbol: string;
+  balance: number;
+}
+
 export interface CreateWallet {
   name: string;
   description?: string;
