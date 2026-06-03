@@ -152,8 +152,16 @@ export async function getUserTransactions(userId: string, queryParams: URLSearch
     if (queryParams.get("walletId")) filters.walletId = queryParams.get("walletId");
     if (queryParams.get("type")) filters.type = queryParams.get("type");
 
+    const from = queryParams.get("from");
+    const to = queryParams.get("to");
     const period = queryParams.get("period");
-    if (period) {
+
+    // from/to tienen prioridad sobre period
+    if (from || to) {
+      filters.date = {};
+      if (from) filters.date.$gte = new Date(from);
+      if (to) filters.date.$lte = new Date(to);
+    } else if (period) {
       const now = new Date();
       const startDate = new Date();
 
