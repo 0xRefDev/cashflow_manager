@@ -51,6 +51,7 @@ matcher: [
     "/api/v1/profile/:path*",
     "/api/v1/analytics/:path*",
     "/api/v1/reports/:path*",
-    "/api/v1/logout/:path*"
+    "/api/v1/logout/:path*",
+    "/api/v1/currency/wallets/:path*",
   ],
 };
