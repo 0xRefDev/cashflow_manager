@@ -25,13 +25,18 @@ interface AsideProps {
 
 export function Aside({ collapsed, onToggle, className }: AsideProps) {
   const options = [
-    { name: "Dashboard", path: "/app/dashboard", icon: Dashboard },
-    { name: "Account", path: "/app/account", icon: Account },
-    { name: "Transactions", path: "/app/transactions", icon: Transactions },
-    { name: "Analytics", path: "/app/analytics", icon: Analytics },
-    { name: "Reports", path: "/app/reports", icon: Reports },
-    { name: "Crypto", path: "/app/undev", icon: Crypto },
-    { name: "Settings", path: "/app/settings", icon: Settings },
+    { name: "Dashboard", path: "/app/dashboard", icon: Dashboard, dev: false },
+    // { name: "Account", path: "/app/account", icon: Account },
+    {
+      name: "Transactions",
+      path: "/app/transactions",
+      icon: Transactions,
+      dev: false,
+    },
+    { name: "Analytics", path: "/app/analytics", icon: Analytics, dev: false },
+    { name: "Reports", path: "/app/reports", icon: Reports, dev: false },
+    { name: "Crypto", path: "/app/crypto", icon: Crypto, dev: true },
+    { name: "Settings", path: "/app/settings", icon: Settings, dev: false },
   ];
 
   const pathname = usePathname();
@@ -48,7 +53,9 @@ export function Aside({ collapsed, onToggle, className }: AsideProps) {
       `}
     >
       {/* Logo */}
-      <div className={`flex items-center gap-2 px-3 mb-4 ${collapsed ? "justify-center" : ""}`}>
+      <div
+        className={`flex items-center gap-2 px-3 mb-4 ${collapsed ? "justify-center" : ""}`}
+      >
         <Image
           src={Logo}
           alt="Cashflow Logo"
@@ -56,8 +63,9 @@ export function Aside({ collapsed, onToggle, className }: AsideProps) {
           className="w-8 lg:w-9 h-auto shrink-0"
         />
         <div
-          className={`flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-            }`}
+          className={`flex flex-col overflow-hidden transition-all duration-300 ${
+            collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+          }`}
         >
           <h1 className="text-landing-primary font-bold text-[1rem] lg:text-[1.1rem] font-manrope whitespace-nowrap">
             CashFlow
@@ -74,9 +82,10 @@ export function Aside({ collapsed, onToggle, className }: AsideProps) {
             <li
               key={opt.name}
               className={`
-                ${isActive(opt.path)
-                  ? "bg-linear-to-r from-landing-primary/12 to-landing-primary/3 border-r-2 border-landing-primary"
-                  : "hover:bg-white/8 border-r-2 border-transparent hover:border-white/15"
+                ${
+                  isActive(opt.path)
+                    ? "bg-linear-to-r from-landing-primary/12 to-landing-primary/3 border-r-2 border-landing-primary"
+                    : "hover:bg-white/8 border-r-2 border-transparent hover:border-white/15"
                 }
                 w-full transition-all duration-100 ease-in-out rounded-l-sm
               `}
@@ -89,12 +98,18 @@ export function Aside({ collapsed, onToggle, className }: AsideProps) {
                   text-sm font-inter w-full flex items-center py-3 transition-all duration-300
                 `}
               >
-                <opt.icon className="shrink-0 w-[18px] h-[18px]" />
+                <opt.icon className="shrink-0 w-4.5 h-4.5" />
                 <span
-                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                    }`}
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                    collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                  }`}
                 >
-                  {opt.name}
+                  {opt.name}{" "}
+                  {opt.dev && (
+                    <span className="ml-2 text-xs text-[#02361A] bg-[#00ff2f] px-1.5 py-0.5 rounded uppercase font-bold font-manrope">
+                      Dev
+                    </span>
+                  )}
                 </span>
               </Link>
             </li>
@@ -103,9 +118,16 @@ export function Aside({ collapsed, onToggle, className }: AsideProps) {
       </nav>
 
       <div className="flex px-3 w-full justify-center mb-4">
-        <Link href="/app/transactions" title="New Transaction" aria-label="New Transaction" className={`flex items-center gap-2 bg-linear-to-r from-landing-primary to-[#13EA79] text-[#02361a] font-semibold ${collapsed ? "px-1 py-3" : "px-3 py-3"} w-full rounded-md justify-center`}>
+        <Link
+          href="/app/transactions"
+          title="New Transaction"
+          aria-label="New Transaction"
+          className={`flex items-center gap-2 bg-linear-to-r from-landing-primary to-[#13EA79] text-[#02361a] font-semibold ${collapsed ? "px-1 py-3" : "px-3 py-3"} w-full rounded-md justify-center`}
+        >
           <Add className="size-6" />
-          <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "hidden" : ""}`}>
+          <span
+            className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "hidden" : ""}`}
+          >
             New Transaction
           </span>
         </Link>
@@ -123,12 +145,14 @@ export function Aside({ collapsed, onToggle, className }: AsideProps) {
           `}
         >
           <ChevronLeft
-            className={`w-4 h-4 shrink-0 transition-transform duration-300 ${collapsed ? "rotate-180" : ""
-              }`}
+            className={`w-4 h-4 shrink-0 transition-transform duration-300 ${
+              collapsed ? "rotate-180" : ""
+            }`}
           />
           <span
-            className={`text-xs font-inter overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-              }`}
+            className={`text-xs font-inter overflow-hidden whitespace-nowrap transition-all duration-300 ${
+              collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+            }`}
           >
             Collapse
           </span>
