@@ -29,3 +29,13 @@ export async function updatePreferences(data: Settings) {
 
   return updatedPreferences;
 }
+
+export async function getPreferences(userId: string) {
+  if (!userId) throw new Error("User ID is missing.");
+
+  const preferences = await Preferences.findOne({ userId }).lean();
+
+  if (!preferences) throw new Error("Preferences not found"); 
+
+  return preferences;
+}
