@@ -19,9 +19,9 @@ export interface Movement {
   type: string;
   userId: string;
   walletId: {
-    _id: string;
+    _id?: string;
     name: string;
-    description: string;
+    description?: string;
     currencyId: {
       name: string;
       symbol: string;
@@ -40,4 +40,32 @@ export interface ReportsTableProps {
 
 export interface TransactionsData {
   transactions?: Movement[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 };
+
+export interface ReportsData {
+  data?: Movement[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+};
+
+export interface SummaryReport {
+  income: {
+    quantity: number;
+    percentage: number;
+  },
+  expenses: {
+    quantity: number;
+    percentage: number;
+  },
+  net_balance: number;  
+}
