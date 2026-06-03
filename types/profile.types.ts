@@ -6,5 +6,14 @@ export interface UserProfile {
   description: string;
   verified: boolean;
   reputation: string;
+  occupation?: string;
   createdAt: string;
+}
+
+export interface UpdateProfileData {
+  fullname?: string;
+  username?: string;
+  country?: string;
+  occupation?: string;
+  description?: string;
 }
