@@ -2,9 +2,11 @@
 
 import Movements from "@/models/Movements";
 
+import { Types } from "mongoose";
+
 export async function getPeriodSummary(
   userId: string,
-  period: "week" | "month" | "quarter" | "year"
+  period: "week" | "month" | "quarter" | "year" | "all" = "all",
 ) {
   const now = new Date();
   let startDate: Date;
@@ -23,37 +25,60 @@ export async function getPeriodSummary(
     case "year":
       startDate = new Date(now.getFullYear(), 0, 1);
       break;
+    case "all":
+      startDate = new Date(0);
+      break;
   }
+
+  const userObjectId = new Types.ObjectId(userId);
 
   const [incomeResult, expenseResult] = await Promise.all([
     Movements.aggregate([
-      { $match: { userId, type: "income", date: { $gte: startDate } } },
-      { $group: { _id: null, total: { $sum: "$quantity" } } }
+      {
+        $match: {
+          userId: userObjectId,
+          type: "income",
+          date: { $gte: startDate },
+        },
+      },
+      { $group: { _id: null, total: { $sum: "$quantity" } } },
     ]),
     Movements.aggregate([
-      { $match: { userId, type: "expense", date: { $gte: startDate } } },
-      { $group: { _id: null, total: { $sum: "$quantity" } } }
-    ])
+      {
+        $match: {
+          userId: userObjectId,
+          type: "expense",
+          date: { $gte: startDate },
+        },
+      },
+      { $group: { _id: null, total: { $sum: "$quantity" } } },
+    ]),
   ]);
 
   const income = incomeResult[0]?.total || 0;
   const expense = expenseResult[0]?.total || 0;
-  const total = income + expense;
+  const totalAmount = income + expense;
 
   return {
     income: {
       quantity: income,
-      percentage: total > 0 ? Math.round((income / total) * 10000) / 100 : 0
+      percentage:
+        totalAmount > 0 ? Math.round((income / totalAmount) * 10000) / 100 : 0,
     },
     expenses: {
       quantity: expense,
-      percentage: total > 0 ? Math.round((expense / total) * 10000) / 100 : 0
+      percentage:
+        totalAmount > 0 ? Math.round((expense / totalAmount) * 10000) / 100 : 0,
     },
-    net_balance: income - expense
+    net_balance: income - expense,
   };
 }
 
-export async function getLiveReport(userId: string, page: number = 1, limit: number = 20) {
+export async function getLiveReport(
+  userId: string,
+  page: number = 1,
+  limit: number = 5,
+) {
   const skip = (page - 1) * limit;
 
   const [movements, total] = await Promise.all([
@@ -61,19 +86,32 @@ export async function getLiveReport(userId: string, page: number = 1, limit: num
       .sort({ date: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("walletId")
+      .populate({
+        path: "walletId",
+        populate: {
+          path: "currencyId",
+        },
+      })
       .populate("category")
       .lean(),
-    Movements.countDocuments({ userId })
+    Movements.countDocuments({ userId }),
   ]);
 
-  const data = movements.map(m => ({
+  const data = movements.map((m) => ({
+    _id: m._id,
+    title: m.title,
     date: (m.date as Date).toISOString(),
     description: m.description,
-    movement_type: m.type,
+    type: m.type,
+    quantity: m.quantity,
     category: m.category,
-    currency: (m.walletId as any)?.currencyId,
-    amount: m.quantity
+    walletId: {
+      name: (m.walletId as any)?.name,
+      currencyId: (m.walletId as any)?.currencyId,
+    },
+    userId: m.userId,
+    createdAt: m.createdAt,
+    updatedAt: m.updatedAt,
   }));
 
   return {
@@ -82,7 +120,7 @@ export async function getLiveReport(userId: string, page: number = 1, limit: num
       page,
       limit,
       total,
-      pages: Math.ceil(total / limit)
-    }
+      pages: Math.ceil(total / limit),
+    },
   };
 }
