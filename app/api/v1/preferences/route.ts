@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import { updatePreferences } from "@/services/server/setting.services";
+import { updatePreferences, getPreferences } from "@/services/server/setting.services";
 import { UpdatePreferencesSchema } from "@/lib/schemas";
 import { validationError, serverError, clientError } from "@/lib/api";
 import { logger } from "@/lib/logger";
@@ -26,5 +26,22 @@ export async function PATCH(req: NextRequest) {
     }
     logger.error("PATCH /preferences failed", err);
     return serverError();
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const userId = req.headers.get("x-user-id");
+    if (!userId) return clientError("Unauthorized", 401);
+
+    const preferences = await getPreferences(userId);
+
+    if (!preferences) throw new Error("Preferences not found");
+
+    return NextResponse.json({ preferences });
+
+} catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    throw new Error(errorMessage);
   }
 }
