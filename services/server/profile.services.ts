@@ -11,7 +11,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
 
     const [user, profile] = await Promise.all([
       User.findById(userId).select('username fullname').lean(),
-      Profile.findOne({ userId }).select('description country profile_photo verified reputation createdAt').lean()
+      Profile.findOne({ userId }).select('description country profile_photo verified reputation createdAt occupation').lean(),
     ]);
 
     if (!user || !profile) throw new Error("User or profile not found");
@@ -21,10 +21,11 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
       fullname: user.fullname,
       description: profile.description || "",
       country: profile.country || "Not specified",
+      occupation: profile.occupation || "",
       profile_photo: profile.profile_photo || null,
       verified: profile.verified ?? false,
       reputation: profile.reputation ?? 0,
-      createdAt: profile.createdAt
+      createdAt: profile.createdAt,
     };
 } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -58,7 +59,7 @@ export async function updateProfile(userId: string, updateData: Partial<UserProf
     const updatedProfile = await Profile.findOneAndUpdate(
       { userId: userId },
       { $set: allowedData },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     ).lean();
 
     if (!updatedProfile) throw new Error("Profile not found");
