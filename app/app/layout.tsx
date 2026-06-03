@@ -7,10 +7,11 @@ import { Aside } from "@/components/app/Aside";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const scrollRef = useRef<HTMLElement>(null);
+  const scrollbarRef = useRef<ReturnType<typeof Scrollbar.init> | null>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      Scrollbar.init(scrollRef.current, {
+    if (scrollRef.current && !scrollbarRef.current) {
+      scrollbarRef.current = Scrollbar.init(scrollRef.current, {
         damping: 0.1,
         thumbMinSize: 10,
         renderByPixels: true,
@@ -29,9 +30,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     return () => {
-      if (scrollRef.current) {
-        Scrollbar.destroy(scrollRef.current);
-      }
+      // No destruir — el scrollbar persiste entre navegaciones
+      // Destruir causaba race conditions con framer-motion exit animations
     };
   }, []);
 
@@ -39,7 +39,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="grid grid-cols-[auto_1fr] h-screen overflow-hidden bg-[#0E0E0E]">
       <Aside collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       <main ref={scrollRef} className="overflow-hidden">
-        {children}
+        <div>
+          {children}
+        </div>
       </main>
     </div>
   );
