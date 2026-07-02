@@ -1,0 +1,6 @@
+[install]
+concurrent-downloads = 10
+
+[run]
+hot = true
+exclude = ["node_modules", ".git", "dist", "build"]
