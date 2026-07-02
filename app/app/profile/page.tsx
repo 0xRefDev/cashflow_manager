@@ -26,9 +26,7 @@ import Image from "next/image";
 import { profileService } from "@/services/client/profile.service";
 import { UpdateProfileSchema } from "@/lib/schemas";
 
-
 export default function Profile() {
-
   const profile = useAuthStore((s) => s.profile);
   const setProfile = useAuthStore((s) => s.setProfile);
   const router = useRouter();
@@ -60,12 +58,12 @@ export default function Profile() {
   const headerOptions = [
     {
       label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications")
+      action: () => router.push("/app/notifications"),
     },
     {
       label: <Help className="w-6 h-6" />,
-      action: () => router.push("/app/help")
-    }
+      action: () => router.push("/app/help"),
+    },
   ];
 
   const handleChange = (field: string, value: string) => {
@@ -148,7 +146,10 @@ export default function Profile() {
           <div className="relative size-32 rounded-xl bg-linear-to-tr from-landing-primary to-[#B4CD46] p-0.75">
             <div className="relative size-full rounded-xl overflow-hidden">
               <Image
-                src={profile?.profile_photo as string || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTj9uaOHSUP94_FgVeF4BtFT6hETgBW_a8xXw&s"}
+                src={
+                  (profile?.profile_photo as string) ||
+                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTj9uaOHSUP94_FgVeF4BtFT6hETgBW_a8xXw&s"
+                }
                 alt={profile?.fullname || "User avatar"}
                 fill
                 unoptimized
@@ -156,7 +157,7 @@ export default function Profile() {
               />
               <Button
                 className="absolute bg-[#EDC767] text-[#1d1d1d] p-1.5 bottom-0 right-0 rounded-tl-lg cursor-pointer"
-                onClick={() => { }}
+                onClick={() => {}}
               >
                 <Camera className="w-5 h-5" />
               </Button>
@@ -170,10 +171,13 @@ export default function Profile() {
                   {profile?.fullname}
                 </h1>
                 <p className="italic text-[#ADAAAA] truncate w-[320px]">
-                  &quot;{profile?.description ?? "No description available"}&quot;
+                  &quot;{profile?.description ?? "No description available"}
+                  &quot;
                 </p>
               </div>
-              {profile?.verified && <Pill className="bg-[#262626] text-sm">Verified Ledger</Pill>}
+              {profile?.verified && (
+                <Pill className="bg-[#262626] text-sm">Verified Ledger</Pill>
+              )}
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
@@ -189,20 +193,21 @@ export default function Profile() {
 
               <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 text-sm text-[#ADAAAA]">
                 <Calendar className="w-4 h-4 text-landing-primary" />
-                Joined {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric"
-                }) : "Unknown date"}
+                Joined{" "}
+                {profile?.createdAt
+                  ? new Date(profile.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Unknown date"}
               </span>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col gap-3">
-          <Button
-            className="bg-landing-primary/10 border border-landing-primary/30 text-landing-primary px-5 py-2.5 rounded-lg cursor-pointer flex justify-center items-center gap-2 font-semibold hover:bg-landing-primary/20 transition-colors w-28"
-          >
+          <Button className="bg-landing-primary/10 border border-landing-primary/30 text-landing-primary px-5 py-2.5 rounded-lg cursor-pointer flex justify-center items-center gap-2 font-semibold hover:bg-landing-primary/20 transition-colors w-28">
             <Share className="w-4 h-4" />
             Share
           </Button>
@@ -210,44 +215,46 @@ export default function Profile() {
             className="bg-white/10 border border-white/20 text-white px-5 py-2.5 rounded-lg cursor-pointer flex justify-center items-center gap-2 font-medium hover:bg-white/20 transition-colors w-28"
             onClick={() => setIsEditing(!isEditing)}
           >
-            {isEditing ? <>
-              <Cancel className="w-4 h-4" /> 
-              Cancel
-            </> : <>
-              <Edit className="w-4 h-4" /> 
-              Edit
-            </>}
+            {isEditing ? (
+              <>
+                <Cancel className="w-4 h-4" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <Edit className="w-4 h-4" />
+                Edit
+              </>
+            )}
           </Button>
         </div>
       </article>
 
       <article className="mx-12 mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="flex flex-col gap-6">
-
           <ProfileDataCard title="Savings Reputation">
             <div className="flex flex-col justify-between items-center pt-2">
-              <ReputationPBar score={2000} /> {/* Cambiar para enviar la reputacion */}
+              <ReputationPBar score={2000} />{" "}
+              {/* Cambiar para enviar la reputacion */}
             </div>
-          </ProfileDataCard>
-
-
-          <ProfileDataCard title="Activity">
-            <UnderDevelopment />
-            {/*             <div className="flex justify-between items-center py-2 border-b border-white/5">
-              <span className="text-white/50">Total Movements</span>
-              <span className="text-landing-primary font-semibold">0</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-white/5">
-              <span className="text-white/50">Active Wallets</span>
-              <span className="text-white font-semibold">0</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-white/5">
-              <span className="text-white/50">Reputation</span>
-              <span className="text-landing-primary font-semibold">A++</span>
-            </div> */}
           </ProfileDataCard>
 
           <ProfileDataCard title="General Info">
+            <div className="flex justify-between items-center py-2 border-b border-white/5">
+              <span className="text-white/50">Net Worth</span>
+              <span className="text-landing-primary font-semibold">0</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-white/5">
+              <span className="text-white/50">Avg. Growth</span>
+              <span className="text-landing-primary font-semibold">0.00%</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-white/5">
+              <span className="text-white/50">Active Wallets</span>
+              <span className="text-white font-semibold">X</span>
+            </div>
+          </ProfileDataCard>
+
+          <ProfileDataCard title="Activity">
             <UnderDevelopment />
             {/* <div className="flex justify-between items-center py-2 border-b border-white/5">
               <span className="text-white/50">Active Wallets</span>
@@ -270,9 +277,11 @@ export default function Profile() {
 
         <section className="p-6 rounded-2xl bg-white/5 border border-white/10">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium mb-4 tracking-[1.5px] uppercase">Edit Profile</h3>
+            <h3 className="text-sm font-medium mb-4 tracking-[1.5px] uppercase">
+              Edit Profile
+            </h3>
             <SettingsPanel className="w-7.5 h-7.5 text-white/50" />
-          </div>          
+          </div>
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
@@ -284,7 +293,11 @@ export default function Profile() {
                     onChange={(e) => handleChange("fullname", e.target.value)}
                     placeholder="Enter your full name"
                   />
-                  {errors.fullname && <span className="text-xs text-red-400">{errors.fullname}</span>}
+                  {errors.fullname && (
+                    <span className="text-xs text-red-400">
+                      {errors.fullname}
+                    </span>
+                  )}
                 </>
               ) : (
                 <Input
@@ -304,7 +317,11 @@ export default function Profile() {
                     onChange={(e) => handleChange("username", e.target.value)}
                     placeholder="Enter your username"
                   />
-                  {errors.username && <span className="text-xs text-red-400">{errors.username}</span>}
+                  {errors.username && (
+                    <span className="text-xs text-red-400">
+                      {errors.username}
+                    </span>
+                  )}
                 </>
               ) : (
                 <Input
@@ -324,7 +341,11 @@ export default function Profile() {
                     onChange={(e) => handleChange("country", e.target.value)}
                     placeholder="Enter your country"
                   />
-                  {errors.country && <span className="text-xs text-red-400">{errors.country}</span>}
+                  {errors.country && (
+                    <span className="text-xs text-red-400">
+                      {errors.country}
+                    </span>
+                  )}
                 </>
               ) : (
                 <Input
@@ -344,7 +365,11 @@ export default function Profile() {
                     onChange={(e) => handleChange("occupation", e.target.value)}
                     placeholder="Enter your occupation"
                   />
-                  {errors.occupation && <span className="text-xs text-red-400">{errors.occupation}</span>}
+                  {errors.occupation && (
+                    <span className="text-xs text-red-400">
+                      {errors.occupation}
+                    </span>
+                  )}
                 </>
               ) : (
                 <Input
@@ -361,12 +386,18 @@ export default function Profile() {
                 <>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => handleChange("description", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("description", e.target.value)
+                    }
                     placeholder="Tell us about yourself"
                     rows={3}
                     className="w-full bg-[#111111] border border-white/5 rounded-xl py-2 px-4 text-white placeholder-gray-500 outline-none hover:border-white/10 focus:border-[#4ade80]/50 focus:ring-1 focus:ring-[#4ade80]/20 transition-all duration-300 resize-none"
                   />
-                  {errors.description && <span className="text-xs text-red-400">{errors.description}</span>}
+                  {errors.description && (
+                    <span className="text-xs text-red-400">
+                      {errors.description}
+                    </span>
+                  )}
                 </>
               ) : (
                 <textarea
@@ -400,6 +431,19 @@ export default function Profile() {
         </section>
       </article>
 
+      <ProfileDataCard
+        title="Danger Zone"
+        className="mx-12 mt-6 text-[#FF7351]"
+      >
+        <div className="flex justify-between items-center text-[#ADAAAA]">
+          Once you delete your profile, there is no going back. Please be
+          certain.
+          <Button className="border-2 border-[#FF7351]/30 text-[#FF7351] px-6 py-2.5 rounded-lg cursor-pointer flex items-center gap-2 font-semibold hover:bg-[#ff330016] transition-colors">
+            Delete Profile
+          </Button>
+          {/* Aplicar funcionalidad de eliminar cuenta.. [Cambiar status de la cuenta] */}
+        </div>
+      </ProfileDataCard>
     </section>
   );
 }
