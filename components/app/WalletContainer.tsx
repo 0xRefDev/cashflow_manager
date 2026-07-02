@@ -3,6 +3,8 @@ import { ChartComponent } from "./ChartComponent";
 import { getCurrencyIcon } from "@/utils/Currencies";
 import { GrowIndicator } from "@/icons/app/GrowIndicator";
 import { DecreaseIndicator } from "@/icons/app/DecreaseIndicator";
+import { SlotText } from "slot-text/react";
+import "slot-text/style.css";
 
 export function WalletContainer({
   wallet,
@@ -29,7 +31,7 @@ export function WalletContainer({
             <div className="leading-tight">
               <p className="text-sm text-[#ADAAAA] font-medium">{name}</p>
               <p className="text-lg font-semibold">
-                {symbol}{balance}
+                <SlotText text={balance ? `${symbol}${balance}` : `${symbol}0.00`} />
               </p>
             </div>
           </div>
@@ -82,7 +84,7 @@ export function WalletContainer({
           {name} <span className="font-extrabold text-[16px]">/</span> Balance
         </p>
         <p className="text-2xl font-sans font-semibold">
-          {symbol}{balance}
+          <SlotText text={balance ? `${symbol}${balance}` : `${symbol}0.00`} />
         </p>
       </div>
 
