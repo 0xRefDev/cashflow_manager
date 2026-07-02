@@ -8,7 +8,7 @@ import { Button } from "../Button";
 
 import Logo from "@/assets/images/cashflow-logo.webp";
 import { Dashboard } from "@/icons/app/Dashboard";
-import { Account } from "@/icons/app/Account";
+import { Wallet } from "@/icons/app/Wallet";
 import { Transactions } from "@/icons/app/Transactions";
 import { Analytics } from "@/icons/app/Analytics";
 import { Reports } from "@/icons/app/Reports";
@@ -35,6 +35,7 @@ export function Aside({ collapsed, onToggle, className }: AsideProps) {
     },
     { name: "Analytics", path: "/app/analytics", icon: Analytics, dev: false },
     { name: "Reports", path: "/app/reports", icon: Reports, dev: false },
+    { name: "Wallets", path: "/app/wallets", icon: Wallet, dev: false },
     { name: "Crypto", path: "/app/crypto", icon: Crypto, dev: true },
     { name: "Settings", path: "/app/settings", icon: Settings, dev: false },
   ];
