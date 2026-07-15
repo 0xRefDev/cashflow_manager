@@ -47,6 +47,7 @@ export function SetupLimitSpend() {
         body: JSON.stringify({
           ...step1,
           spend_limit: amount,
+          baseCurrency: step1?.currency,
         }),
       });
 
