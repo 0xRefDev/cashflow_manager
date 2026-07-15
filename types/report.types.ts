@@ -67,5 +67,26 @@ export interface SummaryReport {
     quantity: number;
     percentage: number;
   },
-  net_balance: number;  
+  net_balance: number;
+  baseCurrency: string;
+}
+
+/**
+ * Period tokens exposed by the UI. "" is the "All Time" button and is
+ * normalized to "all" before hitting the API.
+ */
+export type ReportPeriod = "week" | "month" | "quarter" | "year" | "all" | "";
+
+/**
+ * Client-side filter shape shared by the reports page, the filter bar,
+ * and the client service. Mirrors the server's MovementFilters, plus the
+ * UI-only "all"/"" sentinels for type/period which are stripped before fetch.
+ */
+export interface ReportFilters {
+  period?: ReportPeriod;
+  type?: "income" | "expense" | "all" | "";
+  currencyId?: string;
+  search?: string;
+  from?: string;
+  to?: string;
 }
