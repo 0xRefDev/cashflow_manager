@@ -12,6 +12,7 @@ export interface SetupInput {
   country?: string;
   occupation?: string;
   currency?: string;
+  baseCurrency?: string;
   spend_limit?: number;
 }
 
