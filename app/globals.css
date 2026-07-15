@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tailwindcss-animated";
+@import "react-loading-skeleton/dist/skeleton.css";
 
 :root {
   --background: #ffffff;
