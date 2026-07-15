@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { sileo } from "sileo";
 import { motion } from "framer-motion";
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 import { Cash } from "@/icons/Cash";
 import { Calendar } from "@/icons/app/Calendar";
@@ -36,6 +38,7 @@ export function AddTransaction() {
     "income",
   );
   const [wallets, setWallets] = useState<WalletOption[]>([]);
+  const [walletsLoading, setWalletsLoading] = useState(true);
   const [selectedWallet, setSelectedWallet] = useState("");
 
   const { register, handleSubmit, reset, watch } = useForm<FormValues>({
@@ -79,7 +82,8 @@ export function AddTransaction() {
     walletCurrencyService
       .getUserWallets()
       .then(setWallets)
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setWalletsLoading(false));
   }, []);
 
   async function onSubmit(values: FormValues) {
@@ -238,19 +242,25 @@ export function AddTransaction() {
               >
                 Wallet
               </label>
-              <Select
-                id="currency"
-                value={selectedWallet}
-                className="bg-black"
-                onChange={(e) => setSelectedWallet(e.target.value)}
-                options={[
-                  { value: "", label: "Select wallet" },
-                  ...wallets.map((w) => ({
-                    value: w.walletId,
-                    label: `(${w.symbol}) ${w.currency} - ${w.wallet}`,
-                  })),
-                ]}
-              />
+              {walletsLoading ? (
+                <SkeletonTheme baseColor="#000000" highlightColor="#161616">
+                  <Skeleton height={38} borderRadius={12} />
+                </SkeletonTheme>
+              ) : (
+                <Select
+                  id="currency"
+                  value={selectedWallet}
+                  className="bg-black"
+                  onChange={(e) => setSelectedWallet(e.target.value)}
+                  options={[
+                    { value: "", label: "Select wallet" },
+                    ...wallets.map((w) => ({
+                      value: w.walletId,
+                      label: `(${w.symbol}) ${w.currency} - ${w.wallet}`,
+                    })),
+                  ]}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -340,7 +350,8 @@ export function AddTransaction() {
 
         <Button
           type="submit"
-          className={`w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 ${
+          disabled={walletsLoading}
+          className={`w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
             isIncome
               ? "bg-landing-primary text-[#003518] hover:brightness-110"
               : "bg-[#FF4F5F] text-white hover:brightness-110"
