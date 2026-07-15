@@ -12,7 +12,7 @@ import { Footer } from "@/components/landing/Footer";
 export default function Home() {
   return (
     <>
-      <main className="relative max-w-[1920px] mx-auto">
+      <main className="relative max-w-480 mx-auto">
         <Header />
 
           <section className="flex flex-col">
