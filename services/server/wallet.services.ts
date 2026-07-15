@@ -7,12 +7,18 @@ import Currencies from "@/models/Currencies";
 import Wallet from "@/models/Wallets";
 import { assertObjectId } from "@/lib/api";
 
+interface UpdateWalletInput {
+  name?: string;
+  description?: string;
+  currencyId?: string;
+}
+
 export async function createWallet(data: CreateWallet & UserId) {
   try {
     const { name, balance, description, currencyId, userId } = data;
 
-    if (!name || !balance || !description || !currencyId) {
-      throw new Error("Please provide a valid wallet name, balance, description and currency.");
+    if (!name || typeof balance !== "number" || balance < 0 || !currencyId) {
+      throw new Error("Please provide a valid wallet name, balance and currency.");
     }
 
     if (!userId) {
@@ -34,7 +40,7 @@ export async function createWallet(data: CreateWallet & UserId) {
       userId,
     });
 
-    return wallet;
+    return wallet.populate("currencyId");
 
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -71,6 +77,57 @@ export async function getWalletById(walletId: string, userId: string) {
     const wallet = await Wallet.findOne({ _id: walletId, userId: userId }).populate('currencyId');
 
     if(!wallet) throw new Error("Wallet not found");
+
+    return wallet;
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    throw new Error(errorMessage);
+  }
+}
+
+/* =============================
+   ========== UPDATE ===========
+   ============================= */
+
+export async function updateWallet(walletId: string, userId: string, data: UpdateWalletInput) {
+  assertObjectId(walletId, "walletId");
+
+  try {
+    if (!userId) throw new Error("User ID is missing.");
+
+    if (data.currencyId) {
+      const currency = await Currencies.findById(data.currencyId);
+      if (!currency) throw new Error("Currency not found");
+    }
+
+    const wallet = await Wallet.findOneAndUpdate(
+      { _id: walletId, userId },
+      { $set: data },
+      { new: true }
+    ).populate("currencyId");
+
+    if (!wallet) throw new Error("Wallet not found");
+
+    return wallet;
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    throw new Error(errorMessage);
+  }
+}
+
+/* =============================
+   =========== DELETE ==========
+   ============================= */
+
+export async function deleteWallet(walletId: string, userId: string) {
+  assertObjectId(walletId, "walletId");
+
+  try {
+    if (!userId) throw new Error("User ID is missing.");
+
+    const wallet = await Wallet.findOneAndDelete({ _id: walletId, userId });
+
+    if (!wallet) throw new Error("Wallet not found");
 
     return wallet;
   } catch (err) {
