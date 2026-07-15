@@ -5,6 +5,31 @@ import Movements from "@/models/Movements";
 import Wallet from "@/models/Wallets";
 import { assertObjectId } from "@/lib/api";
 
+let supportsTransactions: boolean | null = null;
+
+async function canUseTransactions() {
+  if (supportsTransactions !== null) {
+    return supportsTransactions;
+  }
+
+  try {
+    const admin = mongoose.connection.db?.admin();
+
+    if (!admin) {
+      supportsTransactions = false;
+      return false;
+    }
+
+    const hello = await admin.command({ hello: 1 });
+
+    supportsTransactions = Boolean(hello.setName);
+  } catch {
+    supportsTransactions = false;
+  }
+
+  return supportsTransactions;
+}
+
 async function addTransactionAtomic(transactionData: NewTransaction) {
   const session = await mongoose.startSession();
   try {
@@ -61,12 +86,21 @@ async function addTransactionWithRollback(transactionData: NewTransaction) {
 
 function isReplicaSetError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
+
   const msg = err.message.toLowerCase();
+
+  const errCode = (err as NodeJS.ErrnoException).code;
+
   return (
-    msg.includes("transaction numbers on a standalone") ||
     msg.includes("replica set") ||
+    msg.includes("standalone") ||
+    msg.includes("transaction numbers") ||
     msg.includes("not support sessions") ||
-    ("code" in err && (err as NodeJS.ErrnoException).code === "20")
+    msg.includes("retryable writes") ||
+    msg.includes("not support retryable writes") ||
+    msg.includes("not running with --replset") ||
+    msg.includes("noreplicationenabled") ||
+    ("code" in err && (errCode === "20" || errCode === "303"))
   );
 }
 
@@ -74,12 +108,18 @@ export async function addTransaction(transactionData: NewTransaction) {
   assertObjectId(transactionData.walletId, "walletId");
   assertObjectId(transactionData.userId, "userId");
 
+  if (!(await canUseTransactions())) {
+    return await addTransactionWithRollback(transactionData);
+  }
+
   try {
     return await addTransactionAtomic(transactionData);
   } catch (err) {
     if (isReplicaSetError(err)) {
+      supportsTransactions = false;
       return await addTransactionWithRollback(transactionData);
     }
+
     throw err;
   }
 }
@@ -122,13 +162,22 @@ async function deleteTransactionWithRollback(transactionId: string, userId: stri
   }
 }
 
-export async function deleteTransaction(transactionId: string, userId: string) {
+export async function deleteTransaction(
+  transactionId: string,
+  userId: string
+) {
   assertObjectId(transactionId, "transactionId");
+
+  if (!(await canUseTransactions())) {
+    await deleteTransactionWithRollback(transactionId, userId);
+    return { success: true };
+  }
 
   try {
     await deleteTransactionAtomic(transactionId, userId);
   } catch (err) {
     if (isReplicaSetError(err)) {
+      supportsTransactions = false;
       await deleteTransactionWithRollback(transactionId, userId);
     } else {
       throw err;
