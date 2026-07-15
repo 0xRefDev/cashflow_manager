@@ -1,3 +1,6 @@
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+
 type CardVariant = "income" | "expense" | "net";
 
 const variantStyles: Record<
@@ -47,14 +50,41 @@ export function InfoCard({
   icon,
   total,
   variant,
+  isLoading = false,
 }: {
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   total: string | number;
   variant: CardVariant;
+  isLoading?: boolean;
 }) {
   const styles = variantStyles[variant];
+
+  if (isLoading) {
+    return (
+      <SkeletonTheme baseColor="#1a1a1a" highlightColor="#262626">
+        <article className="overflow-hidden border border-landing-primary/5 py-5 px-4 bg-[#131313] rounded-4xl shadow-2xl flex flex-col gap-4 relative">
+          <div className="flex items-center gap-2 bg-black/35 p-2 rounded-xl relative z-10">
+            <Skeleton circle width={40} height={40} />
+            <div className="flex flex-col gap-1.5">
+              <Skeleton width={90} height={14} />
+              <Skeleton width={70} height={12} />
+            </div>
+          </div>
+
+          <div className="mt-1">
+            <Skeleton width={110} height={28} />
+          </div>
+
+          <div className="flex items-center gap-2 w-fit">
+            <Skeleton width={60} height={22} borderRadius={999} />
+            <Skeleton width={90} height={12} />
+          </div>
+        </article>
+      </SkeletonTheme>
+    );
+  }
 
   return (
     <>

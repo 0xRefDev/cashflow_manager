@@ -1,3 +1,5 @@
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 import { Button } from "@/components/Button";
 import { ChevronLeft } from "@/icons/ChevronLeft";
 import { ChevronRight } from "@/icons/ChevronRight";
@@ -6,14 +8,32 @@ export function Pagination({
   currentPage,
   totalPages,
   onPageChange,
+  isLoading = false,
 }: {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  isLoading?: boolean;
 }) {
   function handlePageChange(page: number) {
     if (page < 1 || page > totalPages) return;
     onPageChange(page);
+  }
+
+  if (isLoading) {
+    return (
+      <SkeletonTheme baseColor="#1a1a1a" highlightColor="#262626">
+        <div className="flex items-center justify-end gap-1.5 px-4 py-3 bg-[#131313] border-t border-[#484847]/10">
+          <Skeleton width={18} height={18} />
+          <Skeleton width={14} height={18} />
+          <Skeleton width={36} height={36} borderRadius={6} />
+          <Skeleton width={36} height={36} borderRadius={6} />
+          <Skeleton width={36} height={36} borderRadius={6} />
+          <Skeleton width={14} height={18} />
+          <Skeleton width={18} height={18} />
+        </div>
+      </SkeletonTheme>
+    );
   }
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
