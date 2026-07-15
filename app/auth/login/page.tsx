@@ -57,10 +57,15 @@ export default function Login() {
       const res = await authService.login(values);
       setUser(res.user);
 
+      if (!res.user.completedSetup) {
+        router.push("/setup/step/onboarding");
+        return;
+      }
+
       const profile = await authService.getProfile();
       setProfile(profile);
 
-      router.push(res.user.completedSetup ? "/app/dashboard" : "/setup/step/onboarding");
+      router.push("/app/dashboard");
     } catch (error) {
       showError(
         "Authentication Failed",
