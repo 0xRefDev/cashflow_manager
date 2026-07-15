@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { sileo } from "sileo";
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,10 +17,10 @@ import { StepsMark } from "@/components/app/StepsMark";
 import { ChevronLeft } from "@/icons/ChevronLeft";
 import { ChevronRight } from "@/icons/ChevronRight";
 import { World } from "@/icons/World";
-import { Cash } from "@/icons/Cash";
 import { Cake } from "@/icons/Cake";
 import { ChevronDown } from "@/icons/ChevronDown";
 import { Currency } from "@/types/currencies.types";
+import { CurrencySelect } from "@/components/app/CurrencySelect";
 
 const StepOneSchema = z.object({
   gender: z.string().min(1, "Gender is required"),
@@ -38,7 +38,7 @@ export default function Step1() {
   const router = useRouter();
   const setStep1 = useSetupStore((s) => s.setStep1);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<StepOneValues>({
+  const { register, control, handleSubmit, formState: { errors } } = useForm<StepOneValues>({
     resolver: zodResolver(StepOneSchema),
     defaultValues: {
       gender: "",
@@ -124,21 +124,19 @@ export default function Step1() {
 
             <div className="space-y-3 animate-fade-down animate-delay-550">
               <label className="uppercase font-bold text-[10px] text-[#ADAAAA] tracking-[0.2em] ml-1 font-inter">Preferred Currency</label>
-              <div className="relative">
-                <select
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 appearance-none outline-hidden focus:border-landing-primary/50 transition-all text-sm"
-                  {...register("currency")}
-                  id="currency"
-                >
-                  <option value="" disabled selected>Select currency</option>
-                  {currencies?.map((currency) => (
-                    <option key={currency.name} value={currency.name}>
-                      {currency.symbol} - {currency.name}
-                    </option>
-                  ))}
-                </select>
-                <Cash className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#ADAAAA]" />
-              </div>
+              <Controller
+                name="currency"
+                control={control}
+                render={({ field }) => (
+                  <CurrencySelect
+                    currencies={currencies}
+                    keyBy="name"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Select currency"
+                  />
+                )}
+              />
             </div>
 
             <div className="space-y-3 animate-fade-down animate-delay-700">
