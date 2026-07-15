@@ -21,8 +21,8 @@ export function WalletContainer({
 
   if (miniComponent) {
     return (
-      <article className="relative flex flex-col w-[280px] h-[160px] rounded-lg border border-[#484847]/15 bg-[#0f0f0f]/60 backdrop-blur-md overflow-hidden group hover:border-landing-primary/20 transition-colors duration-300">
-        <div className="flex items-center px-4 pt-3 h-[60px]">
+      <article className="relative flex flex-col w-70 h-40 rounded-lg border border-[#484847]/15 bg-[#0f0f0f]/60 backdrop-blur-md overflow-hidden group hover:border-landing-primary/20 transition-colors duration-300">
+        <div className="flex items-center px-4 pt-3 h-15">
           <div className="flex items-center gap-3">
             <div className="bg-landing-primary/10 size-8 rounded-md flex justify-center items-center">
               {Icon && <Icon className="size-4" />}
@@ -55,7 +55,7 @@ export function WalletContainer({
               height={70}
             />
           ) : (
-            <div className="h-[70px] rounded flex justify-center items-center">
+            <div className="h-17.5 rounded flex justify-center items-center">
               <p className="text-white/30 text-xs">No data</p>
             </div>
           )}
@@ -65,7 +65,7 @@ export function WalletContainer({
   }
 
   return (
-    <article className="overflow-hidden bg-radial-[at_50%_95%] from-landing-primary/8 to-landing-primary/0 to-70% border border-[#484847]/5 rounded-lg shadow-2xl shadow-black/20 w-[20rem] h-[365px]">
+    <article className="overflow-hidden bg-radial-[at_50%_95%] from-landing-primary/8 to-landing-primary/0 to-70% border border-[#484847]/5 rounded-lg shadow-2xl shadow-black/20 w-[20rem] h-91.25">
 
       <header className="px-6 pt-6 flex justify-between items-center">
         <div className="bg-landing-primary/10 size-10 rounded-lg flex justify-center items-center">
@@ -92,7 +92,7 @@ export function WalletContainer({
         {transactions?.length > 0 ? (
           <ChartComponent transactions={transactions} />
         ) : (
-          <div className="border border-landing-primary/15 bg-[#0f0f0f] h-[220px] mt-9 rounded-lg flex justify-center items-center">
+          <div className="border border-landing-primary/15 bg-[#0f0f0f] h-55 mt-9 rounded-lg flex justify-center items-center">
             <p className="text-white/40 font-manrope font-semibold mb-7">
               No transactions found
             </p>
