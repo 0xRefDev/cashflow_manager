@@ -59,7 +59,7 @@ export async function createUser(data: CreateUserInput) {
 }
 
 export async function completeUserSetup(userId: string, setupData: SetupInput) {
-  const { gender, birthday, country, occupation, currency, spend_limit } = setupData;
+  const { gender, birthday, country, occupation, currency, baseCurrency, spend_limit } = setupData;
 
   try {
     const [defaultRep, currencyDoc] = await Promise.all([
@@ -93,7 +93,11 @@ export async function completeUserSetup(userId: string, setupData: SetupInput) {
       ...(gender && { gender }),
     });
 
-    await Preferences.findOneAndUpdate({ userId }, { spend_limit });
+    await Preferences.findOneAndUpdate(
+      { userId },
+      { spend_limit, baseCurrency: baseCurrency ?? currency },
+      { upsert: true }
+    );
 
     return { success: true };
   } catch (err: unknown) {
