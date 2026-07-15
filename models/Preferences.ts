@@ -5,6 +5,7 @@ const Preferences = new Schema({
   auto_report: { type: Boolean, required: false, default: true },
   mask_balance: { type: Boolean, required: false, default: false },
   spend_limit: { type: Number, required: false, default: 0 },
+  baseCurrency: { type: String, required: false, default: "USD" },
   userId: {
     type: Schema.Types.ObjectId,
     ref: "User",
