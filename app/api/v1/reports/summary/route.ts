@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import { getPeriodSummary } from "@/services/server/reports.services";
+import {
+  getPeriodSummary,
+  parseMovementFilters,
+} from "@/services/server/reports.services";
+import { getPreferences } from "@/services/server/setting.services";
 import { serverError, clientError } from "@/lib/api";
 
 export async function GET(req: NextRequest) {
@@ -11,13 +15,14 @@ export async function GET(req: NextRequest) {
     if (!userId) return clientError("Unauthorized", 401);
 
     const { searchParams } = new URL(req.url);
-    const period = (searchParams.get("period") || "month") as "week" | "month" | "quarter" | "year";
+    const filters = parseMovementFilters(searchParams);
 
-    if (!["week", "month", "quarter", "year"].includes(period)) {
-      return clientError("Invalid period. Use: week, month, quarter, or year");
-    }
+    const preferences = await getPreferences(userId).catch(
+      () => null as { baseCurrency?: string } | null,
+    );
+    const baseCurrency = preferences?.baseCurrency ?? "USD";
 
-    const summary = await getPeriodSummary(userId, period);
+    const summary = await getPeriodSummary(userId, filters, baseCurrency);
 
     return NextResponse.json({ success: true, ...summary });
   } catch (err) {
