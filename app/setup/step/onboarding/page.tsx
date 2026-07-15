@@ -31,13 +31,6 @@ export default function Step1() {
               >
                 Go to setup your account
               </Link>
-              <Link
-                href="/dashboard"
-                className="text-white font-semibold px-8 lg:px-14 py-3 rounded-lg bg-[#FF4938]/45 flex flex-col items-center justify-center hover:bg-[#FF4938]/60 transition-colors duration-300 cursor-pointer animate-fade-up animate-delay-[0.5s]"
-              >
-                Skip for now
-                <span className="text-xs text-white/50">(not recommended)</span>
-              </Link>
             </div>
           </div>
 
