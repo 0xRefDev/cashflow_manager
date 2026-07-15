@@ -77,6 +77,16 @@ export const CreateWalletSchema = z.object({
   currencyId: mongoId,
 });
 
+export const UpdateWalletSchema = z
+  .object({
+    name: sanitizedString(1, 80).optional(),
+    description: sanitizedString(0, 300).optional(),
+    currencyId: mongoId.optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+  });
+
 // ─── Transactions ─────────────────────────────────────────────────────────────
 
 export const TRANSACTION_CATEGORIES = [
@@ -133,6 +143,7 @@ export const UpdatePreferencesSchema = z
     auto_report: z.boolean().optional(),
     mask_balance: z.boolean().optional(),
     spend_limit: z.number().min(0).optional(),
+    baseCurrency: z.string().trim().min(1).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one preference must be provided",
