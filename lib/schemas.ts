@@ -65,6 +65,7 @@ export const UserSetupSchema = z.object({
   country: sanitizedString(0, 100).optional(),
   occupation: sanitizedString(0, 100).optional(),
   currency: z.string().trim().min(1, "Currency is required"),
+  baseCurrency: z.string().trim().min(1).optional(),
   spend_limit: z.number().min(0, "Spend limit cannot be negative").optional(),
 });
 
