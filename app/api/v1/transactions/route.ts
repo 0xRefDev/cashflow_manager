@@ -4,6 +4,7 @@ import { addTransaction, getUserTransactions } from "@/services/server/transacti
 import { CreateTransactionSchema } from "@/lib/schemas";
 import { validationError, serverError, clientError } from "@/lib/api";
 import { ZodError } from "zod";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof Error && err.message.includes("insufficient balance")) {
       return clientError("Insufficient balance in the selected wallet");
     }
+    logger.error("POST /transactions failed", err, { userId: req.headers.get("x-user-id") });
     return serverError();
   }
 }
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, ...data });
   } catch (err) {
-    void err;
+    logger.error("GET /transactions failed", err, { userId: req.headers.get("x-user-id") });
     return serverError();
   }
 }
