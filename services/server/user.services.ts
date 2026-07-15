@@ -11,6 +11,7 @@ import { signToken } from "@/lib/jose";
 import { sanitizeUser } from "@/utils/sanitizeUser";
 import { CreateUserInput, LoginInput, UpdateUserInput, DeleteUserInput, SetupInput, UserDocument } from "@/types/user.types";
 import { getCurrencyByName } from "@/services/server/currency.services";
+import { generateProfilePhoto } from "@/utils/generateProfilePhoto";
 
 
 /* =============================
@@ -75,6 +76,7 @@ export async function completeUserSetup(userId: string, setupData: SetupInput) {
         country,
         occupation,
         reputationId: defaultRep?._id,
+        profile_photo: generateProfilePhoto(),
       }),
       Wallets.create({
         userId,
