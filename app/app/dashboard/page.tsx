@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 import { MainHeader } from "@/components/app/MainHeader";
 import { WalletContainer } from "@/components/app/WalletContainer";
@@ -26,7 +28,9 @@ import { TransactionsData } from "@/types/report.types";
 export default function Dashboard() {
 
   const [topWallets, setTopWallets] = useState<Wallet[]>([]);
+  const [walletsLoading, setWalletsLoading] = useState(true);
   const [recentlyMovements, setRecentlyMovements] = useState<TransactionsData>({ transactions: [] });
+  const [movementsLoading, setMovementsLoading] = useState(true);
   const [walletsExpanded, setWalletsExpanded] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -52,7 +56,7 @@ export default function Dashboard() {
         setTopWallets(wallets);
       }).catch((error) => {
         console.error("Error to get main wallets:", error);
-      });
+      }).finally(() => setWalletsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -61,7 +65,7 @@ export default function Dashboard() {
         setRecentlyMovements(transactions);
       }).catch((error) => {
         console.error("Error to get recently movements:", error);
-      });
+      }).finally(() => setMovementsLoading(false));
   }, []);
 
   const router = useRouter();
@@ -98,36 +102,49 @@ export default function Dashboard() {
           <h2 className="text-4xl font-semibold text-white 2xl:w-120">Precision oversight for your global assets.</h2>
         </header>
 
-        <section className="flex flex-wrap gap-4 py-8 max-w-275 px-4 items-start">
-          <AnimatePresence mode="wait">
-            {topWallets.length > 0 ? (
-              topWallets.map((wallet) => (
-                <motion.div
-                  key={wallet._id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ 
-                    opacity: 1, 
-                    scale: 1,
-                    width: walletsExpanded ? "20rem" : "280px",
-                    height: walletsExpanded ? "365px" : "160px"
-                  }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ 
-                    duration: 0.5,
-                    ease: [0.4, 0, 0.2, 1]
-                  }}
-                >
-                  <WalletContainer
-                    wallet={wallet}
-                    miniComponent={!walletsExpanded}
-                  />
-                </motion.div>
+        <SkeletonTheme baseColor="#1a1a1a" highlightColor="#262626">
+          <section className="flex flex-wrap gap-4 py-8 max-w-275 px-4 items-start">
+            {walletsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  width={walletsExpanded ? 320 : 280}
+                  height={walletsExpanded ? 365 : 160}
+                  borderRadius={16}
+                />
               ))
             ) : (
-              <p className="text-center">No wallets found</p>
+              <AnimatePresence mode="wait">
+                {topWallets.length > 0 ? (
+                  topWallets.map((wallet) => (
+                    <motion.div
+                      key={wallet._id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ 
+                        opacity: 1, 
+                        scale: 1,
+                        width: walletsExpanded ? "20rem" : "280px",
+                        height: walletsExpanded ? "365px" : "160px"
+                      }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ 
+                        duration: 0.5,
+                        ease: [0.4, 0, 0.2, 1]
+                      }}
+                    >
+                      <WalletContainer
+                        wallet={wallet}
+                        miniComponent={!walletsExpanded}
+                      />
+                    </motion.div>
+                  ))
+                ) : (
+                  <p className="text-center">No wallets found</p>
+                )}
+              </AnimatePresence>
             )}
-          </AnimatePresence>
-        </section>
+          </section>
+        </SkeletonTheme>
 
         <Button
           onClick={toggleWalletsExpanded}
@@ -159,12 +176,36 @@ export default function Dashboard() {
           </header>
 
           <article className="mt-6 rounded-lg overflow-hidden shadow-2xl shadow-black/20">
-            <ReportsTable reports={recentlyMovements.transactions} headers={[
-              { label: "Quantity" },
-              { label: "Currency" },
-              { label: "Description" },
-              { label: "Date" }
-            ]} />
+            <SkeletonTheme baseColor="#1a1a1a" highlightColor="#262626">
+              {movementsLoading ? (
+                <div className="flex flex-col gap-2 bg-[#131313] p-4">
+                  {/* Header row */}
+                  <div className="grid grid-cols-4 gap-4 pb-3">
+                    {["Quantity", "Currency", "Description", "Date"].map((label) => (
+                      <p key={label} className="text-xs uppercase tracking-wider text-white/40">
+                        {label}
+                      </p>
+                    ))}
+                  </div>
+                  {/* Rows */}
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="grid grid-cols-4 gap-4 items-center py-2">
+                      <Skeleton width="60%" height={14} />
+                      <Skeleton width="50%" height={14} />
+                      <Skeleton width="80%" height={14} />
+                      <Skeleton width="50%" height={14} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ReportsTable reports={recentlyMovements.transactions} headers={[
+                  { label: "Quantity" },
+                  { label: "Currency" },
+                  { label: "Description" },
+                  { label: "Date" }
+                ]} />
+              )}
+            </SkeletonTheme>
           </article>
         </section>
 
