@@ -41,7 +41,7 @@ export function SetupLimitSpend() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/user/setup", {
+      const res = await fetch("/api/v1/user/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -73,7 +73,7 @@ export function SetupLimitSpend() {
       bg-white/3
       border border-white/8
       p-5 lg:p-7
-      w-full max-w-[460px]
+      w-full max-w-115
       rounded-2xl
       shadow-[0_40px_80px_rgba(0,0,0,0.5)]
       flex flex-col gap-6
