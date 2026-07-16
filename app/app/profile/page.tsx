@@ -11,7 +11,6 @@ import { UnderDevelopment } from "@/components/UnderDevelopment";
 
 import { Help } from "@/icons/Help";
 import { Bell } from "@/icons/app/Bell";
-import { Camera } from "@/icons/app/Camera";
 import { Share } from "@/icons/app/Share";
 import { Location } from "@/icons/app/Location";
 import { Calendar } from "@/icons/app/Calendar";
@@ -19,6 +18,7 @@ import { AtSign } from "@/icons/AtSign";
 import { Edit } from "@/icons/app/Edit";
 import { Cancel } from "@/icons/Cancel";
 import { SettingsPanel } from "@/icons/app/SettingsPanel";
+import { Reset } from "@/icons/app/Reset";
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,7 @@ export default function Profile() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRegeneratingAvatar, setIsRegeneratingAvatar] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
@@ -120,6 +121,21 @@ export default function Profile() {
     setIsEditing(false);
   };
 
+  const handleRegenerateAvatar = async () => {
+    setIsRegeneratingAvatar(true);
+    try {
+      const res = await fetch("/api/v1/profile/avatar", { method: "POST" });
+      const data = await res.json();
+      if (data.success && data.profile_photo) {
+        setProfile({ ...profile!, profile_photo: data.profile_photo });
+      }
+    } catch (err) {
+      console.error("Failed to regenerate avatar:", err);
+    } finally {
+      setIsRegeneratingAvatar(false);
+    }
+  };
+
   return (
     <section className="flex flex-col gap-0 min-h-screen text-white relative overflow-hidden pb-10">
       {/* Glow Lights */}
@@ -148,20 +164,28 @@ export default function Profile() {
               <Image
                 src={
                   (profile?.profile_photo as string) ||
-                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTj9uaOHSUP94_FgVeF4BtFT6hETgBW_a8xXw&s"
+                  "https://api.dicebear.com/9.x/notionists-neutral/svg?seed=default"
                 }
                 alt={profile?.fullname || "User avatar"}
                 fill
                 unoptimized
                 className="object-cover"
               />
-              <Button
-                className="absolute bg-[#EDC767] text-[#1d1d1d] p-1.5 bottom-0 right-0 rounded-tl-lg cursor-pointer"
-                onClick={() => {}}
-              >
-                <Camera className="w-5 h-5" />
-              </Button>
             </div>
+            {/* Regenerate Avatar Button */}
+            <Button
+              type="button"
+              onClick={handleRegenerateAvatar}
+              disabled={isRegeneratingAvatar}
+              className="absolute bottom-0 right-0 bg-landing-primary/90 p-1.5 rounded-lg transition-colors text-[#032212]"
+              title="Regenerate avatar"
+            >
+              {isRegeneratingAvatar ? (
+                <Reset className="w-4 h-4 animate-spin" />
+              ) : (
+                <Reset className="w-4 h-4" />
+              )}
+            </Button>
           </div>
 
           <div className="flex flex-col h-full gap-2">
