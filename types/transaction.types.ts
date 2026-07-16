@@ -10,3 +10,13 @@ export interface NewTransaction {
   type: "income" | "expense";
   category?: TransactionCategory;
 }
+
+export interface UpdateTransactionData {
+  title?: string;
+  quantity?: number;
+  description?: string;
+  date?: Date;
+  walletId?: string;
+  type?: "income" | "expense";
+  category?: TransactionCategory;
+}
