@@ -1,5 +1,6 @@
 import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import { usePreferences } from "@/hooks/usePreferences";
 
 type CardVariant = "income" | "expense" | "net";
 
@@ -59,6 +60,7 @@ export function InfoCard({
   variant: CardVariant;
   isLoading?: boolean;
 }) {
+  const { formatAmount } = usePreferences();
   const styles = variantStyles[variant];
 
   if (isLoading) {
@@ -86,6 +88,8 @@ export function InfoCard({
     );
   }
 
+  const displayTotal = typeof total === "number" ? formatAmount(total) : total;
+
   return (
     <>
       <article className="overflow-hidden border border-landing-primary/5 py-5 px-4 bg-[#131313] rounded-4xl shadow-2xl flex flex-col gap-4 relative hover:border-landing-primary/12.5 transition-colors">
@@ -103,7 +107,7 @@ export function InfoCard({
         </div>
 
         <div className="flex items-center gap-2 mt-1">
-          <span className={`text-2xl font-bold ${styles.color}`}>${total}</span>
+          <span className={`text-2xl font-bold ${styles.color}`}>{displayTotal}</span>
         </div>
 
         <div className={`flex items-center gap-2 w-fit uppercase`}>
