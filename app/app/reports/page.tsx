@@ -14,6 +14,8 @@ import { Pagination } from "@/components/app/Pagination";
 import { ReportPdfTemplate } from "@/components/app/ReportPdfTemplate";
 import { Button } from "@/components/Button";
 import { exportElementToPdf } from "@/components/app/helpers/exportReportPdf";
+import { ConfirmDialog } from "@/components/app/ConfirmDialog";
+import { EditTransactionModal } from "@/components/app/EditTransactionModal";
 
 import { Help } from "@/icons/Help";
 import { Download } from "@/icons/app/Download";
@@ -28,7 +30,9 @@ import {
   SummaryReport,
   ReportFilters,
 } from "@/types/report.types";
-import { transactionService } from "@/services/client/reports.services";
+import { transactionService } from "@/services/client/transaction.services";
+import { reportsService } from "@/services/client/reports.services";
+import { usePreferences } from "@/hooks/usePreferences";
 
 const LIMIT = 7;
 
@@ -44,6 +48,7 @@ const EMPTY_BAR_FILTERS: ReportsFilterValues = {
 
 export default function Page() {
   const router = useRouter();
+  const { formatAmount } = usePreferences();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>("month");
   const [barFilters, setBarFilters] =
@@ -64,6 +69,10 @@ export default function Page() {
   const [exportMovements, setExportMovements] = useState<Movement[] | null>(null);
   const pdfTemplateRef = useRef<HTMLDivElement>(null);
 
+  // Edit/Delete modals
+  const [editModal, setEditModal] = useState<{ open: boolean; movement: Movement | null }>({ open: false, movement: null });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; movement: Movement | null }>({ open: false, movement: null });
+
   const filters: ReportFilters = {
     period: selectedPeriod,
     type: barFilters.type,
@@ -75,7 +84,7 @@ export default function Page() {
 
   useEffect(() => {
     setMovementsLoading(true);
-    transactionService
+    reportsService
       .movements(currentPage, LIMIT, filters)
       .then((transactions) => {
         setMovements(transactions);
@@ -87,7 +96,7 @@ export default function Page() {
 
   useEffect(() => {
     setSummaryLoading(true);
-    transactionService
+    reportsService
       .summary(filters)
       .then((data) => {
         setSummary(data);
@@ -116,7 +125,7 @@ export default function Page() {
     if (isExporting) return;
     setIsExporting(true);
     try {
-      const allMovements = await transactionService.movementsAll(filters);
+      const allMovements = await reportsService.movementsAll(filters);
       setExportMovements(allMovements ?? []);
       await waitForNextPaint();
 
@@ -136,6 +145,33 @@ export default function Page() {
     }
   };
 
+  const handleEdit = (movement: Movement) => {
+    setEditModal({ open: true, movement });
+  };
+
+  const handleDelete = (movement: Movement) => {
+    setDeleteConfirm({ open: true, movement });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.movement) return;
+    try {
+      await transactionService.delete(deleteConfirm.movement._id);
+      setDeleteConfirm({ open: false, movement: null });
+      // Refresh movements
+      const refreshed = await reportsService.movements(currentPage, LIMIT, filters);
+      setMovements(refreshed);
+    } catch (err) {
+      console.error("Failed to delete:", err);
+    }
+  };
+
+  const handleEditSuccess = async () => {
+    setEditModal({ open: false, movement: null });
+    const refreshed = await reportsService.movements(currentPage, LIMIT, filters);
+    setMovements(refreshed);
+  };
+
   const headerOptions = [
     {
       label: <Bell className="w-6 h-6" />,
@@ -152,21 +188,21 @@ export default function Page() {
       title: "Total Incomes",
       subtitle: `${summary.income.percentage.toFixed(2)}%`,
       icon: <GrowIndicator className="w-5 h-5" />,
-      total: summary.income.quantity.toFixed(2) ?? 0,
+      total: formatAmount(summary.income.quantity, { currency: summary.baseCurrency }),
       variant: "income" as const,
     },
     {
       title: "Total Expenses",
       subtitle: `${summary.expenses.percentage.toFixed(2)}%`,
       icon: <DecreaseIndicator className="w-5 h-5" />,
-      total: summary.expenses.quantity.toFixed(2) ?? 0,
+      total: formatAmount(summary.expenses.quantity, { currency: summary.baseCurrency }),
       variant: "expense" as const,
     },
     {
       title: "Net Balance",
       subtitle: `Selected Period (${summary.baseCurrency})`,
       icon: <Account className="w-5 h-5" />,
-      total: summary.net_balance.toFixed(2) ?? 0,
+      total: formatAmount(summary.net_balance, { currency: summary.baseCurrency }),
       variant: "net" as const,
     },
   ];
@@ -225,6 +261,9 @@ export default function Page() {
               { label: "Description" },
               { label: "Date" },
             ]}
+            formatAmount={formatAmount}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
 
           <Button
@@ -261,6 +300,23 @@ export default function Page() {
           </div>
         </div>
       )}
+
+      <EditTransactionModal
+        open={editModal.open}
+        onClose={() => setEditModal({ open: false, movement: null })}
+        transaction={editModal.movement}
+        onSuccess={handleEditSuccess}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        title="Delete Transaction"
+        description={`Are you sure you want to delete "${deleteConfirm.movement?.title}"? This action cannot be undone and will revert the balance on the associated wallet.`}
+        confirmLabel="Delete"
+        isConfirming={false}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ open: false, movement: null })}
+      />
     </section>
   );
 }
