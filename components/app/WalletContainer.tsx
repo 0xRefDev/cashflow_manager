@@ -5,19 +5,22 @@ import { GrowIndicator } from "@/icons/app/GrowIndicator";
 import { DecreaseIndicator } from "@/icons/app/DecreaseIndicator";
 import { SlotText } from "slot-text/react";
 import "slot-text/style.css";
+import { usePreferences } from "@/hooks/usePreferences";
 
 export function WalletContainer({
   wallet,
-  miniComponent
-}: { 
-  wallet: Wallet, 
-  miniComponent?: boolean
+  miniComponent,
+}: {
+  wallet: Wallet;
+  miniComponent?: boolean;
 }) {
+  const { formatAmount } = usePreferences();
 
   const { name, balance, transactions, percentage, currencyId } = wallet;
   const { name: currencyName, symbol } = currencyId;
 
   const Icon = getCurrencyIcon(currencyName);
+  const displayBalance = balance ? formatAmount(balance, { currency: currencyName }) : formatAmount(0, { currency: currencyName });
 
   if (miniComponent) {
     return (
@@ -31,15 +34,21 @@ export function WalletContainer({
             <div className="leading-tight">
               <p className="text-sm text-[#ADAAAA] font-medium">{name}</p>
               <p className="text-lg font-semibold">
-                <SlotText text={balance ? `${symbol}${balance}` : `${symbol}0.00`} />
+                <SlotText text={displayBalance} />
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4 ml-auto">
             <div className="text-right">
-              <p className={`text-sm flex items-center gap-1 font-medium ${percentage >= 0 ? 'text-landing-primary' : 'text-[#FF7351]'}`}>
-                {percentage >= 0 ? <GrowIndicator className="size-4 text-landing-primary" /> : <DecreaseIndicator className="size-4 text-[#FF7351]" />}
+              <p
+                className={`text-sm flex items-center gap-1 font-medium ${percentage >= 0 ? "text-landing-primary" : "text-[#FF7351]"}`}
+              >
+                {percentage >= 0 ? (
+                  <GrowIndicator className="size-4 text-landing-primary" />
+                ) : (
+                  <DecreaseIndicator className="size-4 text-[#FF7351]" />
+                )}
                 {percentage}%
               </p>
               <p className="text-xs text-[#ADAAAA]">7d</p>
@@ -50,10 +59,7 @@ export function WalletContainer({
         {/* Mini chart */}
         <div className="flex-1 px-2 pb-2 min-h-0">
           {transactions?.length > 0 ? (
-            <ChartComponent
-              transactions={transactions}
-              height={70}
-            />
+            <ChartComponent transactions={transactions} height={70} />
           ) : (
             <div className="h-17.5 rounded flex justify-center items-center">
               <p className="text-white/30 text-xs">No data</p>
@@ -66,13 +72,14 @@ export function WalletContainer({
 
   return (
     <article className="overflow-hidden bg-radial-[at_50%_95%] from-landing-primary/8 to-landing-primary/0 to-70% border border-[#484847]/5 rounded-lg shadow-2xl shadow-black/20 w-[20rem] h-91.25">
-
       <header className="px-6 pt-6 flex justify-between items-center">
         <div className="bg-landing-primary/10 size-10 rounded-lg flex justify-center items-center">
           {Icon && <Icon className="size-5" />}
         </div>
         <div>
-          <p className={`flex justify-end text-sm text-right ${percentage < 0 ? 'text-red-500' : 'text-landing-primary'} font-medium`}>
+          <p
+            className={`flex justify-end text-sm text-right ${percentage < 0 ? "text-red-500" : "text-landing-primary"} font-medium`}
+          >
             {percentage}%
           </p>
           <p className="text-sm text-[#ADAAAA] font-medium">Last 7 Days</p>
@@ -84,7 +91,7 @@ export function WalletContainer({
           {name} <span className="font-extrabold text-[16px]">/</span> Balance
         </p>
         <p className="text-2xl font-sans font-semibold">
-          <SlotText text={balance ? `${symbol}${balance}` : `${symbol}0.00`} />
+          <SlotText text={displayBalance} />
         </p>
       </div>
 
