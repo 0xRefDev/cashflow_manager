@@ -1,21 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  preferencesService,
-  getPreferences,
-} from "@/services/client/preferences.services";
+import { currencyService } from "@/services/client/currencies.services";
+import { useRouter } from "next/navigation";
 
 import { MainHeader } from "@/components/app/MainHeader";
 import { Input } from "@/components/Input";
-import { Select } from "@/components/Select";
 import { ToggleButton } from "@/components/app/ToggleButton";
 import { Divider } from "@/components/app/Divider";
 import { CryptoAdvice } from "@/components/app/CryptoAdvice";
 import { FloatingContainer } from "@/components/app/FloatingContainer";
+import { CurrencySelect } from "@/components/app/CurrencySelect";
 
-import { Settings } from "@/types/settings.types";
-import { useRouter } from "next/navigation";
+import { Currency } from "@/types/currencies.types";
+import { usePreferences } from "@/hooks/usePreferences";
 
 import { Help } from "@/icons/Help";
 import { Bell } from "@/icons/app/Bell";
@@ -25,8 +23,29 @@ import { Reports } from "@/icons/Reports";
 
 export default function Page() {
   const router = useRouter();
-  const [userPreferences, setUserPreferences] = useState<Settings>({});
-  const [originalPreferences, setOriginalPreferences] = useState<Settings>({});
+const {
+    maskBalance,
+    baseCurrency,
+    spendLimit,
+    autoReport,
+    showAlerts,
+    setMaskBalance,
+    setBaseCurrency,
+    setSpendLimit,
+    setAutoReport,
+    setShowAlerts,
+    hydrate,
+  } = usePreferences();
+
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [originalPrefs, setOriginalPrefs] = useState({
+    maskBalance: false,
+    baseCurrency: "USD",
+    spendLimit: 0,
+    autoReport: false,
+    showAlerts: true,
+  });
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const headerOptions = [
     {
@@ -39,36 +58,52 @@ export default function Page() {
     },
   ];
 
-  const hasChanges =
-    JSON.stringify(originalPreferences) !== JSON.stringify(userPreferences);
+  useEffect(() => {
+    const stored = localStorage.getItem("cashflow-preferences");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        hydrate(parsed);
+        setOriginalPrefs({
+          maskBalance: parsed.mask_balance ?? false,
+          baseCurrency: parsed.baseCurrency ?? "USD",
+          spendLimit: parsed.spend_limit ?? 0,
+          autoReport: parsed.auto_report ?? false,
+          showAlerts: parsed.show_alerts ?? true,
+        });
+      } catch {}
+    }
+    setIsHydrated(true);
+  }, [hydrate]);
 
   useEffect(() => {
-    getPreferences()
-      .then((preferences) => {
-        setUserPreferences(preferences);
-        setOriginalPreferences(preferences);
-        const state = JSON.parse(
-          localStorage.getItem("userPreferences") || "{}",
-        );
-        localStorage.setItem(
-          "userPreferences",
-          JSON.stringify({ ...state, ...preferences }),
-        );
-      })
-      .catch((error) => {
-        console.error("Error to get user preferences:", error);
-      });
+    currencyService.get().then(setCurrencies).catch(console.error);
   }, []);
 
-  const getChangedFields = (
-    original: Settings,
-    current: Settings,
-  ): Partial<Settings> => {
-    return Object.fromEntries(
-      Object.entries(current).filter(
-        ([key, value]) => value !== original[key as keyof Settings],
-      ),
-    ) as Partial<Settings>;
+  const hasChanges =
+    spendLimit !== originalPrefs.spendLimit ||
+    baseCurrency !== originalPrefs.baseCurrency ||
+    maskBalance !== originalPrefs.maskBalance ||
+    autoReport !== originalPrefs.autoReport ||
+    showAlerts !== originalPrefs.showAlerts;
+
+  const handleSave = () => {
+    setOriginalPrefs({
+      maskBalance,
+      baseCurrency,
+      spendLimit,
+      autoReport,
+      showAlerts,
+    });
+    router.refresh();
+  };
+
+  const handleDiscard = () => {
+    setMaskBalance(originalPrefs.maskBalance);
+    setBaseCurrency(originalPrefs.baseCurrency);
+    setSpendLimit(originalPrefs.spendLimit);
+    setAutoReport(originalPrefs.autoReport);
+    setShowAlerts(originalPrefs.showAlerts);
   };
 
   return (
@@ -85,27 +120,7 @@ export default function Page() {
       />
 
       {hasChanges && (
-        <FloatingContainer
-          onSave={() => {
-            const changedFields = getChangedFields(
-              originalPreferences,
-              userPreferences,
-            );
-            preferencesService.update(changedFields).then((updated) => {
-              const newPreferences = { ...originalPreferences, ...updated };
-
-              setOriginalPreferences(newPreferences);
-              setUserPreferences(newPreferences);
-
-              localStorage.setItem(
-                "userPreferences",
-                JSON.stringify(newPreferences),
-              );
-              router.refresh();
-            });
-          }}
-          onDiscard={() => setUserPreferences(originalPreferences)}
-        />
+        <FloatingContainer onSave={handleSave} onDiscard={handleDiscard} />
       )}
 
       <article className="grid grid-cols-1 items-center gap-4 p-16">
@@ -118,20 +133,12 @@ export default function Page() {
           </div>
           <div className="bg-[#131313] w-full p-4 py-8 rounded-xl shadow-2xl shadow-black/25 flex flex-col gap-1 relative border border-[#ADAAAA]/5">
             <USD className="size-4.5 text-landing-primary/80 absolute left-7 top-[53%]" />
-            <label
-              htmlFor="spend_limit"
-              className="ml-1 text-sm text-[#ADAAAA]"
-            >
+            <label htmlFor="spend_limit" className="ml-1 text-sm text-[#ADAAAA]">
               Monthly Spending Limit
             </label>
             <Input
-              value={userPreferences.spend_limit || ""}
-              onChange={(e) =>
-                setUserPreferences((prev) => ({
-                  ...prev,
-                  spend_limit: Number(e.target.value),
-                }))
-              }
+              value={spendLimit || ""}
+              onChange={(e) => setSpendLimit(Number(e.target.value))}
               placeholder="0.00"
               type="number"
               id="spend_limit"
@@ -148,22 +155,15 @@ export default function Page() {
           </div>
           <div className="bg-[#131313] w-full p-4 py-8 rounded-xl shadow-2xl shadow-black/25 flex flex-col gap-1 relative border border-[#ADAAAA]/5">
             <USD className="size-4.5 text-landing-primary/80 absolute left-7 top-[53%]" />
-            <label
-              htmlFor="spend_limit"
-              className="ml-1 text-sm text-[#ADAAAA]"
-            >
+            <label htmlFor="baseCurrency" className="ml-1 text-sm text-[#ADAAAA]">
               Default Currency
             </label>
-            <Select
-              options={[
-                { label: "USD - US Dollar", value: "USD" },
-                { label: "EUR - Euro", value: "EUR" },
-                { label: "GBP - British Pound", value: "GBP" },
-                { label: "JPY - Japanese Yen", value: "JPY" },
-                { label: "AUD - Australian Dollar", value: "AUD" },
-              ]}
-              id="spend_limit"
-              className="w-full pl-9"
+            <CurrencySelect
+              currencies={currencies}
+              keyBy="name"
+              value={baseCurrency}
+              onChange={setBaseCurrency}
+              className="w-full"
             />
           </div>
         </div>
@@ -189,12 +189,7 @@ export default function Page() {
                   </p>
                 </div>
               </div>
-              <ToggleButton
-                value={userPreferences.mask_balance ?? false}
-                onChange={(val) =>
-                  setUserPreferences((prev) => ({ ...prev, mask_balance: val }))
-                }
-              />
+              <ToggleButton value={maskBalance} onChange={setMaskBalance} />
             </div>
             <div className="bg-[#131313] w-full pl-6 py-8 rounded-xl shadow-2xl shadow-black/25 flex items-center justify-between pr-12 gap-1 relative border border-[#ADAAAA]/5">
               <div className="flex items-center gap-6">
@@ -206,12 +201,7 @@ export default function Page() {
                   </p>
                 </div>
               </div>
-              <ToggleButton
-                value={userPreferences.auto_report ?? false}
-                onChange={(val) =>
-                  setUserPreferences((prev) => ({ ...prev, auto_report: val }))
-                }
-              />
+              <ToggleButton value={autoReport} onChange={setAutoReport} />
             </div>
           </article>
         </div>
