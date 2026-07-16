@@ -21,9 +21,11 @@ import { Trash } from "@/icons/app/Trash";
 
 import { walletService } from "@/services/client/wallet.services";
 import { Wallet } from "@/types/wallet.types";
+import { usePreferences } from "@/hooks/usePreferences";
 
 export default function Page() {
   const router = useRouter();
+  const { formatAmount } = usePreferences();
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -205,8 +207,7 @@ export default function Page() {
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="text-landing-primary font-semibold">
-                        {wallet.currencyId.symbol}
-                        {wallet.balance.toLocaleString("en-US")}
+                        {formatAmount(wallet.balance, { currency: wallet.currencyId.name })}
                       </p>
                       <div className="flex items-center gap-1">
                         <button
