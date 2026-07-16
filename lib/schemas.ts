@@ -115,6 +115,13 @@ export const CreateTransactionSchema = z.object({
   category: z.enum(TRANSACTION_CATEGORIES).optional(),
 });
 
+export const UpdateTransactionSchema = CreateTransactionSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  { message: "At least one field must be provided" }
+);
+
+export type UpdateTransactionInput = z.infer<typeof UpdateTransactionSchema>;
+
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
 export const UpdateProfileSchema = z
