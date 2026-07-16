@@ -21,11 +21,13 @@ import { Contract } from "@/icons/app/Contract";
 import { ExpandIcon } from "@/icons/app/ExpandIcon";
 
 import { walletService } from "@/services/client/wallet.services";
-import { transactionService } from "@/services/client/reports.services";
+import { reportsService } from "@/services/client/reports.services";
 import { Wallet } from "@/types/wallet.types";
 import { TransactionsData } from "@/types/report.types";
+import { usePreferences } from "@/hooks/usePreferences";
 
 export default function Dashboard() {
+  const { formatAmount } = usePreferences();
 
   const [topWallets, setTopWallets] = useState<Wallet[]>([]);
   const [walletsLoading, setWalletsLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    transactionService.recentlyMovements()
+    reportsService.recentlyMovements()
       .then((transactions) => {
         setRecentlyMovements(transactions);
       }).catch((error) => {
@@ -198,12 +200,16 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <ReportsTable reports={recentlyMovements.transactions} headers={[
-                  { label: "Quantity" },
-                  { label: "Currency" },
-                  { label: "Description" },
-                  { label: "Date" }
-                ]} />
+                <ReportsTable
+                  reports={recentlyMovements.transactions}
+                  headers={[
+                    { label: "Quantity" },
+                    { label: "Currency" },
+                    { label: "Description" },
+                    { label: "Date" }
+                  ]}
+                  formatAmount={formatAmount}
+                />
               )}
             </SkeletonTheme>
           </article>
