@@ -1,6 +1,6 @@
 import "server-only";
 import mongoose from "mongoose";
-import { NewTransaction } from "@/types/transaction.types";
+import { NewTransaction, UpdateTransactionData } from "@/types/transaction.types";
 import Movements from "@/models/Movements";
 import Wallet from "@/models/Wallets";
 import { assertObjectId } from "@/lib/api";
@@ -185,6 +185,204 @@ export async function deleteTransaction(
   }
 
   return { success: true };
+}
+
+async function calculateBalanceAdjustment(
+  oldWalletId: string,
+  newWalletId: string,
+  oldType: "income" | "expense",
+  newType: "income" | "expense",
+  oldQuantity: number,
+  newQuantity: number
+): Promise<{ walletId: string; adjustment: number }[]> {
+  const adjustments: { walletId: string; adjustment: number }[] = [];
+
+  if (oldWalletId === newWalletId) {
+    // Same wallet: net adjustment
+    const oldImpact = oldType === "income" ? oldQuantity : -oldQuantity;
+    const newImpact = newType === "income" ? newQuantity : -newQuantity;
+    const net = newImpact - oldImpact;
+    if (net !== 0) {
+      adjustments.push({ walletId: oldWalletId, adjustment: net });
+    }
+  } else {
+    // Different wallets: reverse old, apply new
+    const oldImpact = oldType === "income" ? -oldQuantity : oldQuantity;
+    const newImpact = newType === "income" ? newQuantity : -newQuantity;
+    adjustments.push({ walletId: oldWalletId, adjustment: oldImpact });
+    adjustments.push({ walletId: newWalletId, adjustment: newImpact });
+  }
+
+  return adjustments;
+}
+
+async function updateTransactionAtomic(
+  transactionId: string,
+  userId: string,
+  updateData: UpdateTransactionData
+) {
+  const session = await mongoose.startSession();
+  try {
+    let updatedMovement: (typeof Movements.prototype) | null = null;
+    await session.withTransaction(async () => {
+      // 1. Fetch original transaction
+      const original = await Movements.findOne({ _id: transactionId, userId }).session(session);
+      if (!original) throw new Error("Movement not found or unauthorized");
+
+      // 2. Determine old vs new values
+      const oldWalletId = original.walletId.toString();
+      const oldType = original.type;
+      const oldQuantity = original.quantity;
+
+      const newWalletId = updateData.walletId ?? oldWalletId;
+      const newType = updateData.type ?? oldType;
+      const newQuantity = updateData.quantity ?? oldQuantity;
+
+      // 3. Calculate balance adjustments
+      const adjustments = await calculateBalanceAdjustment(
+        oldWalletId,
+        newWalletId,
+        oldType,
+        newType,
+        oldQuantity,
+        newQuantity
+      );
+
+      // 4. Apply wallet balance updates
+      for (const { walletId, adjustment } of adjustments) {
+        const updateResult = await Wallet.updateOne(
+          { _id: walletId, userId },
+          { $inc: { balance: adjustment } },
+          { session }
+        );
+        if (updateResult.matchedCount === 0) {
+          throw new Error(`Wallet ${walletId} not found or unauthorized`);
+        }
+      }
+
+      // 5. Update movement document
+      const updateFields: Partial<UpdateTransactionData> = {};
+      if (updateData.title !== undefined) updateFields.title = updateData.title;
+      if (updateData.quantity !== undefined) updateFields.quantity = updateData.quantity;
+      if (updateData.description !== undefined) updateFields.description = updateData.description;
+      if (updateData.date !== undefined) updateFields.date = updateData.date;
+      if (updateData.walletId !== undefined) updateFields.walletId = new mongoose.Types.ObjectId(updateData.walletId);
+      if (updateData.type !== undefined) updateFields.type = updateData.type;
+      if (updateData.category !== undefined) updateFields.category = updateData.category;
+
+      const [updated] = await Movements.findByIdAndUpdate(
+        transactionId,
+        { $set: updateFields },
+        { new: true, session }
+      ).populate({
+        path: 'walletId',
+        select: 'name description currencyId',
+        populate: { path: 'currencyId', select: 'name symbol' }
+      });
+
+      updatedMovement = updated;
+    });
+    return updatedMovement!;
+  } finally {
+    await session.endSession();
+  }
+}
+
+async function updateTransactionWithRollback(
+  transactionId: string,
+  userId: string,
+  updateData: UpdateTransactionData
+) {
+  // 1. Fetch original transaction
+  const original = await Movements.findOne({ _id: transactionId, userId });
+  if (!original) throw new Error("Movement not found or unauthorized");
+
+  const oldWalletId = original.walletId.toString();
+  const oldType = original.type;
+  const oldQuantity = original.quantity;
+
+  const newWalletId = updateData.walletId ?? oldWalletId;
+  const newType = updateData.type ?? oldType;
+  const newQuantity = updateData.quantity ?? oldQuantity;
+
+  // 2. Calculate balance adjustments
+  const adjustments = await calculateBalanceAdjustment(
+    oldWalletId,
+    newWalletId,
+    oldType,
+    newType,
+    oldQuantity,
+    newQuantity
+  );
+
+  // 3. Apply wallet balance updates
+  for (const { walletId, adjustment } of adjustments) {
+    const updateResult = await Wallet.updateOne(
+      { _id: walletId, userId },
+      { $inc: { balance: adjustment } }
+    );
+    if (updateResult.matchedCount === 0) {
+      throw new Error(`Wallet ${walletId} not found or unauthorized`);
+    }
+  }
+
+  // 4. Update movement document
+  try {
+    const updateFields: Partial<UpdateTransactionData> = {};
+    if (updateData.title !== undefined) updateFields.title = updateData.title;
+    if (updateData.quantity !== undefined) updateFields.quantity = updateData.quantity;
+    if (updateData.description !== undefined) updateFields.description = updateData.description;
+    if (updateData.date !== undefined) updateFields.date = updateData.date;
+    if (updateData.walletId !== undefined) updateFields.walletId = new mongoose.Types.ObjectId(updateData.walletId);
+    if (updateData.type !== undefined) updateFields.type = updateData.type;
+    if (updateData.category !== undefined) updateFields.category = updateData.category;
+
+    return await Movements.findByIdAndUpdate(
+      transactionId,
+      { $set: updateFields },
+      { new: true }
+    ).populate({
+      path: 'walletId',
+      select: 'name description currencyId',
+      populate: { path: 'currencyId', select: 'name symbol' }
+    });
+  } catch (err) {
+    // Rollback wallet balances on movement update failure
+    for (const { walletId, adjustment } of adjustments) {
+      await Wallet.updateOne(
+        { _id: walletId, userId },
+        { $inc: { balance: -adjustment } }
+      );
+    }
+    throw err;
+  }
+}
+
+export async function updateTransaction(
+  transactionId: string,
+  userId: string,
+  updateData: UpdateTransactionData
+) {
+  assertObjectId(transactionId, "transactionId");
+  assertObjectId(userId, "userId");
+
+  if (updateData.walletId) {
+    assertObjectId(updateData.walletId, "walletId");
+  }
+
+  if (!(await canUseTransactions())) {
+    return await updateTransactionWithRollback(transactionId, userId, updateData);
+  }
+
+  try {
+    return await updateTransactionAtomic(transactionId, userId, updateData);
+  } catch (err) {
+    if (isReplicaSetError(err)) {
+      supportsTransactions = false;
+      return await updateTransactionWithRollback(transactionId, userId, updateData);
+    }
+    throw err;
+  }
 }
 
 
