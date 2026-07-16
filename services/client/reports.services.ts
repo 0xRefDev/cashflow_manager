@@ -21,7 +21,7 @@ function buildFilterParams(filters: ReportFilters = {}): URLSearchParams {
   return params;
 }
 
-export const transactionService = {
+export const reportsService = {
   async recentlyMovements(): Promise<ReportsData> {
     const res = await fetch("/api/v1/transactions?limit=5", {
       cache: "no-store",
