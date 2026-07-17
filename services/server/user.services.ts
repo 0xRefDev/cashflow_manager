@@ -12,6 +12,7 @@ import { sanitizeUser } from "@/utils/sanitizeUser";
 import { CreateUserInput, LoginInput, UpdateUserInput, DeleteUserInput, SetupInput, UserDocument } from "@/types/user.types";
 import { getCurrencyByName } from "@/services/server/currency.services";
 import { generateProfilePhoto } from "@/utils/generateProfilePhoto";
+import { createNotification } from "@/services/server/notification.services";
 
 
 /* =============================
@@ -184,6 +185,17 @@ export async function loginUser(data: LoginInput) {
       userId: user._id.toString(),
       username: user.username,
       email: user.email,
+    });
+
+    await createNotification({
+      userId: user._id.toString(),
+      category: "Security",
+      title: "New login detected",
+      message: `Login successful for ${user.username}`,
+      payload: { 
+        username: user.username,
+        loginTime: new Date().toISOString()
+      }
     });
 
     return {
