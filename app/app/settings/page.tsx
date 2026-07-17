@@ -16,7 +16,6 @@ import { Currency } from "@/types/currencies.types";
 import { usePreferences } from "@/hooks/usePreferences";
 
 import { Help } from "@/icons/Help";
-import { Bell } from "@/icons/app/Bell";
 import { USD } from "@/icons/currencies/USD";
 import { Hide } from "@/icons/app/Hide";
 import { Reports } from "@/icons/Reports";
@@ -48,10 +47,6 @@ const {
   const [isHydrated, setIsHydrated] = useState(false);
 
   const headerOptions = [
-    {
-      label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications"),
-    },
     {
       label: <Help className="w-6 h-6" />,
       action: () => router.push("/app/help"),

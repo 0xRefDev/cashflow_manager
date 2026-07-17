@@ -19,7 +19,6 @@ import { EditTransactionModal } from "@/components/app/EditTransactionModal";
 
 import { Help } from "@/icons/Help";
 import { Download } from "@/icons/app/Download";
-import { Bell } from "@/icons/app/Bell";
 import { GrowIndicator } from "@/icons/app/GrowIndicator";
 import { DecreaseIndicator } from "@/icons/app/DecreaseIndicator";
 import { Account } from "@/icons/app/Account";
@@ -173,10 +172,6 @@ export default function Page() {
   };
 
   const headerOptions = [
-    {
-      label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications"),
-    },
     {
       label: <Help className="w-6 h-6" />,
       action: () => router.push("/app/help"),

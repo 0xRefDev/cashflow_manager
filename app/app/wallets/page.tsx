@@ -13,7 +13,6 @@ import { CreateWalletModal } from "@/components/app/CreateWalletModal";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 
 import { Help } from "@/icons/Help";
-import { Bell } from "@/icons/app/Bell";
 import { Add } from "@/icons/app/Add";
 import { Download } from "@/icons/app/Download";
 import { Edit } from "@/icons/app/Edit";
@@ -75,10 +74,6 @@ export default function Page() {
   }
 
   const headerOptions = [
-    {
-      label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications"),
-    },
     {
       label: <Help className="w-6 h-6" />,
       action: () => router.push("/app/help"),

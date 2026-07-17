@@ -10,7 +10,6 @@ import { Input } from "@/components/Input";
 import { UnderDevelopment } from "@/components/UnderDevelopment";
 
 import { Help } from "@/icons/Help";
-import { Bell } from "@/icons/app/Bell";
 import { Share } from "@/icons/app/Share";
 import { Location } from "@/icons/app/Location";
 import { Calendar } from "@/icons/app/Calendar";
@@ -57,10 +56,6 @@ export default function Profile() {
   }, [profile, isEditing]);
 
   const headerOptions = [
-    {
-      label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications"),
-    },
     {
       label: <Help className="w-6 h-6" />,
       action: () => router.push("/app/help"),

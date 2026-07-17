@@ -14,7 +14,6 @@ import { Footer } from "@/components/app/Footer";
 import { Button } from "@/components/Button";
 
 import { useAuthStore } from "@/store/useAuthStore";
-import { Bell } from "@/icons/app/Bell";
 import { Help } from "@/icons/Help";
 import { ForwardArrow } from "@/icons/ForwardArrow";
 import { Contract } from "@/icons/app/Contract";
@@ -72,10 +71,6 @@ export default function Dashboard() {
 
   const router = useRouter();
   const headerOptions = [
-    {
-      label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications")
-    },
     {
       label: <Help className="w-6 h-6" />,
       action: () => router.push("/app/help")

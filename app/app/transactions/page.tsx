@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { Help } from "@/icons/Help";
-import { Bell } from "@/icons/app/Bell";
 import { History } from "@/icons/app/History";
 import Link from "next/link";
 
@@ -13,10 +12,6 @@ export default function Page() {
   const router = useRouter();
 
   const headerOptions = [
-    {
-      label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications")
-    },
     {
       label: <Help className="w-6 h-6" />,
       action: () => router.push("/app/help")

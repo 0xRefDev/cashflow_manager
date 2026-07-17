@@ -3,17 +3,12 @@
 import { CryptoAdvice } from "@/components/app/CryptoAdvice";
 import { MainHeader } from "@/components/app/MainHeader";
 import { Help } from "@/icons/Help";
-import { Bell } from "@/icons/app/Bell";
 import { useRouter } from "next/navigation";
 
 export default function Page() {
   const router = useRouter();
 
   const headerOptions = [
-    {
-      label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications"),
-    },
     {
       label: <Help className="w-6 h-6" />,
       action: () => router.push("/app/help"),
