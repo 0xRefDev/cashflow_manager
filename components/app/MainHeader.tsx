@@ -2,14 +2,19 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { MainHeaderProps } from "@/types/header.types";
 import { useAuthStore } from "@/store/useAuthStore";
 import { User } from "@/icons/User";
 import { Logout } from "@/icons/app/Logout";
+import { Bell } from "@/icons/app/Bell";
 import Link from "next/link";
 import { Button } from "../Button";
+import { notificationService } from "@/services/client/notification.services";
+
+const UNREAD_POLL_INTERVAL_MS = 30_000;
 
 export function MainHeader({ title, options, anchor }: MainHeaderProps) {
   const router = useRouter();
@@ -21,6 +26,26 @@ export function MainHeader({ title, options, anchor }: MainHeaderProps) {
   const displayName = profile?.fullname ?? user?.fullname ?? "";
   const photoUrl = profile?.profile_photo ?? user?.profile_photo ?? null;
   const isLoading = !hasHydrated;
+
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const data = await notificationService.getNotifications({ limit: 1 });
+      setUnreadCount(data.unreadCount);
+    } catch (err) {
+      console.error("Failed to fetch unread count:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, UNREAD_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
+
+  const hasUnread = !!unreadCount && unreadCount > 0;
+  const displayCount = unreadCount && unreadCount > 9 ? "9+" : unreadCount;
 
   return (
     <header
@@ -45,6 +70,25 @@ export function MainHeader({ title, options, anchor }: MainHeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <Button
+            onClick={() => router.push("/app/notifications")}
+            className="relative text-xs sm:text-sm text-white/50 hover:text-white/90 transition-colors duration-200 px-3 py-1.5 rounded-lg hover:bg-landing-primary/15 cursor-pointer"
+            title="Notifications"
+          >
+            <Bell className="w-6 h-6" />
+            {hasUnread &&
+              (displayCount ? (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-landing-primary text-[10px] font-semibold text-black leading-none">
+                  {displayCount}
+                </span>
+              ) : (
+                <span className="absolute top-1 right-1.5 flex size-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-landing-primary/50" />
+                  <span className="relative inline-flex size-2.5 rounded-full bg-landing-primary" />
+                </span>
+              ))}
+          </Button>
+
           {options?.map((option, index) => (
             <Button
               key={index}
