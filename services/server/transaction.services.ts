@@ -4,6 +4,14 @@ import { NewTransaction, UpdateTransactionData } from "@/types/transaction.types
 import Movements from "@/models/Movements";
 import Wallet from "@/models/Wallets";
 import { assertObjectId } from "@/lib/api";
+import { createNotification } from "@/services/server/notification.services";
+import { formatCurrency } from "@/utils/formatCurrency";
+import Currencies from "@/models/Currencies";
+
+async function getWalletCurrency(walletId: string): Promise<string> {
+  const wallet = await Wallet.findById(walletId).populate("currencyId", "name").lean();
+  return wallet?.currencyId?.name ?? "USD";
+}
 
 let supportsTransactions: boolean | null = null;
 
@@ -51,7 +59,25 @@ async function addTransactionAtomic(transactionData: NewTransaction) {
       const [created] = await Movements.create([transactionData], { session });
       transaction = created;
     });
-    return transaction!;
+    const createdTransaction = transaction!;
+    
+    // Create Financial notification
+    const currency = await getWalletCurrency(transactionData.walletId);
+    await createNotification({
+      userId: transactionData.userId,
+      category: "Financial",
+      title: transactionData.type === "income" ? "Income recorded" : "Expense recorded",
+      message: `${transactionData.title}: ${formatCurrency(transactionData.quantity, { currency })}`,
+      payload: { 
+        transactionId: createdTransaction._id.toString(), 
+        walletId: transactionData.walletId,
+        type: transactionData.type,
+        quantity: transactionData.quantity,
+        category: transactionData.category
+      }
+    });
+    
+    return createdTransaction;
   } finally {
     await session.endSession();
   }
@@ -74,7 +100,25 @@ async function addTransactionWithRollback(transactionData: NewTransaction) {
   }
 
   try {
-    return await Movements.create(transactionData);
+    const createdTransaction = await Movements.create(transactionData);
+    
+    // Create Financial notification
+    const currency = await getWalletCurrency(transactionData.walletId);
+    await createNotification({
+      userId: transactionData.userId,
+      category: "Financial",
+      title: transactionData.type === "income" ? "Income recorded" : "Expense recorded",
+      message: `${transactionData.title}: ${formatCurrency(transactionData.quantity, { currency })}`,
+      payload: { 
+        transactionId: createdTransaction._id.toString(), 
+        walletId: transactionData.walletId,
+        type: transactionData.type,
+        quantity: transactionData.quantity,
+        category: transactionData.category
+      }
+    });
+    
+    return createdTransaction;
   } catch (err) {
     await Wallet.updateOne(
       { _id: walletId, userId },
@@ -137,6 +181,20 @@ async function deleteTransactionAtomic(transactionId: string, userId: string) {
       );
       await Movements.findByIdAndDelete(transactionId, { session });
     });
+    
+    // Create Financial notification for deleted transaction
+    await createNotification({
+      userId,
+      category: "Financial",
+      title: "Transaction deleted",
+      message: `Deleted ${movement.type === "income" ? "income" : "expense"}: ${movement.title}`,
+      payload: { 
+        deletedTransactionId: transactionId,
+        type: movement.type,
+        quantity: movement.quantity,
+        walletId: movement.walletId.toString()
+      }
+    });
   } finally {
     await session.endSession();
   }
@@ -160,6 +218,20 @@ async function deleteTransactionWithRollback(transactionId: string, userId: stri
     );
     throw err;
   }
+  
+  // Create Financial notification for deleted transaction
+  await createNotification({
+    userId,
+    category: "Financial",
+    title: "Transaction deleted",
+    message: `Deleted ${movement.type === "income" ? "income" : "expense"}: ${movement.title}`,
+    payload: { 
+      deletedTransactionId: transactionId,
+      type: movement.type,
+      quantity: movement.quantity,
+      walletId: movement.walletId.toString()
+    }
+  });
 }
 
 export async function deleteTransaction(
@@ -282,6 +354,20 @@ async function updateTransactionAtomic(
 
       updatedMovement = updated;
     });
+    
+    // Create Financial notification for updated transaction
+    await createNotification({
+      userId,
+      category: "Financial",
+      title: "Transaction updated",
+      message: `Modified ${updateData.type === "income" ? "income" : "expense"}: ${updateData.title || updatedMovement?.title}`,
+      payload: { 
+        transactionId,
+        changes: updateData,
+        walletId: updatedMovement?.walletId.toString()
+      }
+    });
+    
     return updatedMovement!;
   } finally {
     await session.endSession();
@@ -337,7 +423,7 @@ async function updateTransactionWithRollback(
     if (updateData.type !== undefined) updateFields.type = updateData.type;
     if (updateData.category !== undefined) updateFields.category = updateData.category;
 
-    return await Movements.findByIdAndUpdate(
+    const updated = await Movements.findByIdAndUpdate(
       transactionId,
       { $set: updateFields },
       { new: true }
@@ -346,6 +432,21 @@ async function updateTransactionWithRollback(
       select: 'name description currencyId',
       populate: { path: 'currencyId', select: 'name symbol' }
     });
+    
+    // Create Financial notification for updated transaction
+    await createNotification({
+      userId,
+      category: "Financial",
+      title: "Transaction updated",
+      message: `Modified ${updateData.type === "income" ? "income" : "expense"}: ${updateData.title || original.title}`,
+      payload: { 
+        transactionId,
+        changes: updateData,
+        walletId: updated?.walletId.toString()
+      }
+    });
+    
+    return updated;
   } catch (err) {
     // Rollback wallet balances on movement update failure
     for (const { walletId, adjustment } of adjustments) {
