@@ -1,4 +1,4 @@
-import { ReportsData, SummaryReport, ReportFilters } from "@/types/report.types";
+import { ReportsData, TransactionsData, SummaryReport, ReportFilters } from "@/types/report.types";
 
 /**
  * Serializes the active filters into query params, dropping empty values and
@@ -22,14 +22,14 @@ function buildFilterParams(filters: ReportFilters = {}): URLSearchParams {
 }
 
 export const reportsService = {
-  async recentlyMovements(): Promise<ReportsData> {
+  async recentlyMovements(): Promise<TransactionsData> {
     const res = await fetch("/api/v1/transactions?limit=5", {
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Failed to fetch recently movements");
     const data = await res.json();
-    if (!data?.transactions) return { data: [] };
-    return data;
+    if (!data?.transactions) return { transactions: [] };
+    return { transactions: data.transactions, pagination: data.pagination };
   },
   async movements(
     page: number,

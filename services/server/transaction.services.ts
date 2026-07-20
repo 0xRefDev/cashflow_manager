@@ -370,7 +370,7 @@ async function updateTransactionAtomic(
       if (updateData.quantity !== undefined) updateFields.quantity = updateData.quantity;
       if (updateData.description !== undefined) updateFields.description = updateData.description;
       if (updateData.date !== undefined) updateFields.date = updateData.date;
-      if (updateData.walletId !== undefined) updateFields.walletId = new mongoose.Types.ObjectId(updateData.walletId);
+      if (updateData.walletId !== undefined) updateFields.walletId = updateData.walletId;
       if (updateData.type !== undefined) updateFields.type = updateData.type;
       if (updateData.category !== undefined) updateFields.category = updateData.category;
 
@@ -446,7 +446,7 @@ async function updateTransactionWithRollback(
     if (updateData.quantity !== undefined) updateFields.quantity = updateData.quantity;
     if (updateData.description !== undefined) updateFields.description = updateData.description;
     if (updateData.date !== undefined) updateFields.date = updateData.date;
-    if (updateData.walletId !== undefined) updateFields.walletId = new mongoose.Types.ObjectId(updateData.walletId);
+    if (updateData.walletId !== undefined) updateFields.walletId = updateData.walletId;
     if (updateData.type !== undefined) updateFields.type = updateData.type;
     if (updateData.category !== undefined) updateFields.category = updateData.category;
 

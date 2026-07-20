@@ -11,11 +11,12 @@ import { Trash } from "@/icons/app/Trash";
 
 import { ChevronRight } from "@/icons/ChevronRight";
 import { usePreferences } from "@/hooks/usePreferences";
+import { FormatCurrencyOptions } from "@/utils/formatCurrency";
 
 interface ReportsTableExtendedProps extends ReportsTableProps {
   isLoading?: boolean;
   skeletonRows?: number;
-  formatAmount?: (amount: number, currency: string) => string;
+  formatAmount?: (amount: number, options?: Partial<FormatCurrencyOptions>) => string;
   onEdit?: (movement: Movement) => void;
   onDelete?: (movement: Movement) => void;
 }
@@ -89,7 +90,7 @@ export function ReportsTable({
               const Icon = isMovement ? getCurrencyIcon(currencyName) : null;
               const walletName = isMovement ? report.walletId.name : "N/A";
 
-              const displayAmount = formatAmount ? formatAmount(amount, currencyName) : `${symbol}${amount.toLocaleString()}`;
+              const displayAmount = formatAmount ? formatAmount(amount, { currency: currencyName }) : `${symbol}${amount.toLocaleString()}`;
               const converted = formatConverted(amount, currencyName).converted;
 
               return (

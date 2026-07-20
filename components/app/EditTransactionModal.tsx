@@ -119,7 +119,9 @@ export function EditTransactionModal({
         quantity: transaction.quantity,
         description: transaction.description || "",
         date: transaction.date.split("T")[0],
-        category: transaction.category || "",
+        category: transaction.category
+          ? (transaction.category as (typeof TRANSACTION_CATEGORIES)[number])
+          : undefined,
       });
     }
   }, [transaction, open, reset]);

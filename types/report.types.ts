@@ -16,10 +16,10 @@ export interface Movement {
   description: string;
   category: string;
   date: string;
-  type: string;
+  type: "income" | "expense";
   userId: string;
   walletId: {
-    _id?: string;
+    _id: string;
     name: string;
     description?: string;
     currencyId: {

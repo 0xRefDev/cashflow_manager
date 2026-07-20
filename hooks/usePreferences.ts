@@ -59,11 +59,11 @@ export function usePreferences() {
   };
 
   return {
-    maskBalance: mask_balance,
-    baseCurrency,
-    spendLimit: spend_limit,
-    autoReport: auto_report,
-    showAlerts: show_alerts,
+    maskBalance: mask_balance ?? false,
+    baseCurrency: baseCurrency ?? "USD",
+    spendLimit: spend_limit ?? 0,
+    autoReport: auto_report ?? false,
+    showAlerts: show_alerts ?? true,
 
     setMaskBalance,
     setBaseCurrency,

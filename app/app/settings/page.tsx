@@ -84,11 +84,11 @@ const {
 
   const handleSave = () => {
     setOriginalPrefs({
-      maskBalance,
-      baseCurrency,
-      spendLimit,
-      autoReport,
-      showAlerts,
+      maskBalance: maskBalance ?? false,
+      baseCurrency: baseCurrency ?? "USD",
+      spendLimit: spendLimit ?? 0,
+      autoReport: autoReport ?? false,
+      showAlerts: showAlerts ?? true,
     });
     router.refresh();
   };
