@@ -6,6 +6,8 @@ import User from "@/models/User";
 import Currencies from "@/models/Currencies";
 import Wallet from "@/models/Wallets";
 import { assertObjectId } from "@/lib/api";
+import { createNotification } from "@/services/server/notification.services";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 interface UpdateWalletInput {
   name?: string;
@@ -40,7 +42,17 @@ export async function createWallet(data: CreateWallet & UserId) {
       userId,
     });
 
-    return wallet.populate("currencyId");
+    const created = await wallet.populate("currencyId");
+
+    await createNotification({
+      userId,
+      category: "Financial",
+      title: "Wallet created",
+      message: `Wallet "${name}" created with ${formatCurrency(balance, { currency: currency.name })}`,
+      payload: { walletId: created._id.toString(), balance, currency: currency.name },
+    });
+
+    return created;
 
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -128,6 +140,14 @@ export async function deleteWallet(walletId: string, userId: string) {
     const wallet = await Wallet.findOneAndDelete({ _id: walletId, userId });
 
     if (!wallet) throw new Error("Wallet not found");
+
+    await createNotification({
+      userId,
+      category: "Financial",
+      title: "Wallet deleted",
+      message: `Wallet "${wallet.name}" was deleted`,
+      payload: { walletId: wallet._id.toString(), name: wallet.name },
+    });
 
     return wallet;
   } catch (err) {
