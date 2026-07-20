@@ -21,6 +21,7 @@ import { Trash } from "@/icons/app/Trash";
 import { walletService } from "@/services/client/wallet.services";
 import { Wallet } from "@/types/wallet.types";
 import { usePreferences } from "@/hooks/usePreferences";
+import { sileo } from "sileo";
 
 export default function Page() {
   const router = useRouter();
@@ -62,12 +63,34 @@ export default function Page() {
   async function handleConfirmDelete() {
     if (!deletingWallet) return;
     setIsDeleting(true);
+    const walletName = deletingWallet.name;
     try {
       await walletService.remove(deletingWallet._id);
       setWallets((prev) => prev.filter((w) => w._id !== deletingWallet._id));
       setDeletingWallet(null);
+      sileo.success({
+        title: "Wallet Deleted",
+        description: <span className="text-center">{walletName}</span>,
+        fill: "black",
+        styles: {
+          title: "text-white!",
+          description: "text-white/75!",
+          badge: "bg-white/5!",
+        },
+      });
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to delete wallet";
       console.error("Error deleting wallet:", error);
+      sileo.error({
+        title: "Something went wrong",
+        description: <span className="text-center">{message}</span>,
+        fill: "black",
+        styles: {
+          title: "text-white!",
+          description: "text-white/75!",
+          badge: "bg-white/5!",
+        },
+      });
     } finally {
       setIsDeleting(false);
     }
