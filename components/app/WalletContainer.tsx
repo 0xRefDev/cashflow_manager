@@ -14,13 +14,14 @@ export function WalletContainer({
   wallet: Wallet;
   miniComponent?: boolean;
 }) {
-  const { formatAmount } = usePreferences();
+  const { formatAmount, formatConverted, baseCurrency } = usePreferences();
 
   const { name, balance, transactions, percentage, currencyId } = wallet;
   const { name: currencyName, symbol } = currencyId;
 
   const Icon = getCurrencyIcon(currencyName);
   const displayBalance = balance ? formatAmount(balance, { currency: currencyName }) : formatAmount(0, { currency: currencyName });
+  const convertedBalance = currencyName !== baseCurrency ? formatConverted(balance ?? 0, currencyName).converted : null;
 
   if (miniComponent) {
     return (
@@ -36,6 +37,9 @@ export function WalletContainer({
               <p className="text-lg font-semibold">
                 <SlotText text={displayBalance} />
               </p>
+              {convertedBalance && (
+                <p className="text-xs text-white/40 font-medium">{convertedBalance}</p>
+              )}
             </div>
           </div>
 
@@ -93,6 +97,9 @@ export function WalletContainer({
         <p className="text-2xl font-sans font-semibold">
           <SlotText text={displayBalance} />
         </p>
+        {convertedBalance && (
+          <p className="text-xs text-white/40 font-medium mt-0.5">{convertedBalance}</p>
+        )}
       </div>
 
       <div className="px-6 pb-4">
