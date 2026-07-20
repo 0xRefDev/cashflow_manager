@@ -6,7 +6,7 @@ import Wallet from "@/models/Wallets";
 import { assertObjectId } from "@/lib/api";
 import { createNotification } from "@/services/server/notification.services";
 import { formatCurrency } from "@/utils/formatCurrency";
-import Currencies from "@/models/Currencies";
+import Preferences from "@/models/Preferences";
 
 async function getWalletCurrency(walletId: string): Promise<string> {
   const wallet = await Wallet.findById(walletId).populate("currencyId", "name").lean();
@@ -36,6 +36,38 @@ async function canUseTransactions() {
   }
 
   return supportsTransactions;
+}
+
+async function checkSpendLimit(userId: string, newExpense: number) {
+  const prefs = await Preferences.findOne({ userId }).lean<{
+    spend_limit?: number;
+    baseCurrency?: string;
+  } | null>();
+  const limit = prefs?.spend_limit ?? 0;
+  if (limit <= 0) return;
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const [agg] = await Movements.aggregate([
+    { $match: { userId, type: "expense", date: { $gte: startOfMonth } } },
+    { $group: { _id: null, total: { $sum: "$quantity" } } },
+  ]);
+
+  const totalAfter = agg?.total ?? 0;
+  const totalBefore = totalAfter - newExpense;
+
+  if (totalAfter > limit && totalBefore <= limit) {
+    const base = prefs?.baseCurrency ?? "USD";
+    await createNotification({
+      userId,
+      category: "Financial",
+      title: "Spend limit exceeded",
+      message: `You've spent ${formatCurrency(totalAfter, { currency: base })} of your ${formatCurrency(limit, { currency: base })} limit this month`,
+      payload: { totalAfter, limit, baseCurrency: base },
+    });
+  }
 }
 
 async function addTransactionAtomic(transactionData: NewTransaction) {
@@ -152,28 +184,37 @@ export async function addTransaction(transactionData: NewTransaction) {
   assertObjectId(transactionData.walletId, "walletId");
   assertObjectId(transactionData.userId, "userId");
 
+  let result;
+
   if (!(await canUseTransactions())) {
-    return await addTransactionWithRollback(transactionData);
-  }
-
-  try {
-    return await addTransactionAtomic(transactionData);
-  } catch (err) {
-    if (isReplicaSetError(err)) {
-      supportsTransactions = false;
-      return await addTransactionWithRollback(transactionData);
+    result = await addTransactionWithRollback(transactionData);
+  } else {
+    try {
+      result = await addTransactionAtomic(transactionData);
+    } catch (err) {
+      if (isReplicaSetError(err)) {
+        supportsTransactions = false;
+        result = await addTransactionWithRollback(transactionData);
+      } else {
+        throw err;
+      }
     }
-
-    throw err;
   }
+
+  if (transactionData.type === "expense") {
+    await checkSpendLimit(transactionData.userId, transactionData.quantity);
+  }
+
+  return result;
 }
 
 async function deleteTransactionAtomic(transactionId: string, userId: string) {
+  const movement = await Movements.findOne({ _id: transactionId, userId });
+  if (!movement) throw new Error("Movement not found or unauthorized");
+
   const session = await mongoose.startSession();
   try {
     await session.withTransaction(async () => {
-      const movement = await Movements.findOne({ _id: transactionId, userId }).session(session);
-      if (!movement) throw new Error("Movement not found or unauthorized");
       await Wallet.updateOne(
         { _id: movement.walletId, userId },
         { $inc: { balance: movement.type === "income" ? -movement.quantity : movement.quantity } },
@@ -181,19 +222,18 @@ async function deleteTransactionAtomic(transactionId: string, userId: string) {
       );
       await Movements.findByIdAndDelete(transactionId, { session });
     });
-    
-    // Create Financial notification for deleted transaction
+
     await createNotification({
       userId,
       category: "Financial",
       title: "Transaction deleted",
       message: `Deleted ${movement.type === "income" ? "income" : "expense"}: ${movement.title}`,
-      payload: { 
+      payload: {
         deletedTransactionId: transactionId,
         type: movement.type,
         quantity: movement.quantity,
-        walletId: movement.walletId.toString()
-      }
+        walletId: movement.walletId.toString(),
+      },
     });
   } finally {
     await session.endSession();
@@ -219,7 +259,6 @@ async function deleteTransactionWithRollback(transactionId: string, userId: stri
     throw err;
   }
   
-  // Create Financial notification for deleted transaction
   await createNotification({
     userId,
     category: "Financial",
@@ -270,7 +309,6 @@ async function calculateBalanceAdjustment(
   const adjustments: { walletId: string; adjustment: number }[] = [];
 
   if (oldWalletId === newWalletId) {
-    // Same wallet: net adjustment
     const oldImpact = oldType === "income" ? oldQuantity : -oldQuantity;
     const newImpact = newType === "income" ? newQuantity : -newQuantity;
     const net = newImpact - oldImpact;
@@ -278,7 +316,6 @@ async function calculateBalanceAdjustment(
       adjustments.push({ walletId: oldWalletId, adjustment: net });
     }
   } else {
-    // Different wallets: reverse old, apply new
     const oldImpact = oldType === "income" ? -oldQuantity : oldQuantity;
     const newImpact = newType === "income" ? newQuantity : -newQuantity;
     adjustments.push({ walletId: oldWalletId, adjustment: oldImpact });
@@ -297,11 +334,9 @@ async function updateTransactionAtomic(
   try {
     let updatedMovement: (typeof Movements.prototype) | null = null;
     await session.withTransaction(async () => {
-      // 1. Fetch original transaction
       const original = await Movements.findOne({ _id: transactionId, userId }).session(session);
       if (!original) throw new Error("Movement not found or unauthorized");
 
-      // 2. Determine old vs new values
       const oldWalletId = original.walletId.toString();
       const oldType = original.type;
       const oldQuantity = original.quantity;
@@ -310,7 +345,6 @@ async function updateTransactionAtomic(
       const newType = updateData.type ?? oldType;
       const newQuantity = updateData.quantity ?? oldQuantity;
 
-      // 3. Calculate balance adjustments
       const adjustments = await calculateBalanceAdjustment(
         oldWalletId,
         newWalletId,
@@ -320,7 +354,6 @@ async function updateTransactionAtomic(
         newQuantity
       );
 
-      // 4. Apply wallet balance updates
       for (const { walletId, adjustment } of adjustments) {
         const updateResult = await Wallet.updateOne(
           { _id: walletId, userId },
@@ -332,7 +365,6 @@ async function updateTransactionAtomic(
         }
       }
 
-      // 5. Update movement document
       const updateFields: Partial<UpdateTransactionData> = {};
       if (updateData.title !== undefined) updateFields.title = updateData.title;
       if (updateData.quantity !== undefined) updateFields.quantity = updateData.quantity;
@@ -355,7 +387,6 @@ async function updateTransactionAtomic(
       updatedMovement = updated;
     });
     
-    // Create Financial notification for updated transaction
     await createNotification({
       userId,
       category: "Financial",
@@ -379,7 +410,6 @@ async function updateTransactionWithRollback(
   userId: string,
   updateData: UpdateTransactionData
 ) {
-  // 1. Fetch original transaction
   const original = await Movements.findOne({ _id: transactionId, userId });
   if (!original) throw new Error("Movement not found or unauthorized");
 
@@ -391,7 +421,6 @@ async function updateTransactionWithRollback(
   const newType = updateData.type ?? oldType;
   const newQuantity = updateData.quantity ?? oldQuantity;
 
-  // 2. Calculate balance adjustments
   const adjustments = await calculateBalanceAdjustment(
     oldWalletId,
     newWalletId,
@@ -401,7 +430,6 @@ async function updateTransactionWithRollback(
     newQuantity
   );
 
-  // 3. Apply wallet balance updates
   for (const { walletId, adjustment } of adjustments) {
     const updateResult = await Wallet.updateOne(
       { _id: walletId, userId },
@@ -412,7 +440,6 @@ async function updateTransactionWithRollback(
     }
   }
 
-  // 4. Update movement document
   try {
     const updateFields: Partial<UpdateTransactionData> = {};
     if (updateData.title !== undefined) updateFields.title = updateData.title;
@@ -433,7 +460,6 @@ async function updateTransactionWithRollback(
       populate: { path: 'currencyId', select: 'name symbol' }
     });
     
-    // Create Financial notification for updated transaction
     await createNotification({
       userId,
       category: "Financial",
@@ -448,7 +474,6 @@ async function updateTransactionWithRollback(
     
     return updated;
   } catch (err) {
-    // Rollback wallet balances on movement update failure
     for (const { walletId, adjustment } of adjustments) {
       await Wallet.updateOne(
         { _id: walletId, userId },
@@ -504,7 +529,6 @@ export async function getUserTransactions(userId: string, queryParams: URLSearch
     const to = queryParams.get("to");
     const period = queryParams.get("period");
 
-    // from/to tienen prioridad sobre period
     if (from || to) {
       filters.date = {};
       if (from) filters.date.$gte = new Date(from);
