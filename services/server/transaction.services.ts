@@ -512,6 +512,13 @@ export async function updateTransaction(
 }
 
 
+interface TransactionQueryFilters {
+  userId: string;
+  walletId?: string;
+  type?: string;
+  date?: { $gte?: Date; $lte?: Date };
+}
+
 export async function getUserTransactions(userId: string, queryParams: URLSearchParams) {
   try {
     if (!userId) throw new Error("User ID is missing");
@@ -520,10 +527,12 @@ export async function getUserTransactions(userId: string, queryParams: URLSearch
     const limit = Math.max(1, parseInt(queryParams.get("limit") || "20"));
     const skip = (page - 1) * limit;
 
-    const filters: any = { userId };
+    const filters: TransactionQueryFilters = { userId };
 
-    if (queryParams.get("walletId")) filters.walletId = queryParams.get("walletId");
-    if (queryParams.get("type")) filters.type = queryParams.get("type");
+    const walletId = queryParams.get("walletId");
+    if (walletId) filters.walletId = walletId;
+    const type = queryParams.get("type");
+    if (type) filters.type = type;
 
     const from = queryParams.get("from");
     const to = queryParams.get("to");

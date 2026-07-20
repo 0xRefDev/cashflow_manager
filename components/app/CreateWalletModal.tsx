@@ -41,10 +41,12 @@ export function CreateWalletModal({ open, onClose, onSaved, wallet }: CreateWall
 
   useEffect(() => {
     if (!open) return;
-    setName(wallet?.name ?? "");
-    setDescription(wallet?.description ?? "");
-    setCurrencyId(wallet?.currencyId._id ?? "");
-    setError("");
+    queueMicrotask(() => {
+      setName(wallet?.name ?? "");
+      setDescription(wallet?.description ?? "");
+      setCurrencyId(wallet?.currencyId._id ?? "");
+      setError("");
+    });
   }, [open, wallet]);
 
   function handleClose() {

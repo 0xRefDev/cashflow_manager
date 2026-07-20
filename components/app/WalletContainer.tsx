@@ -5,7 +5,13 @@ import { GrowIndicator } from "@/icons/app/GrowIndicator";
 import { DecreaseIndicator } from "@/icons/app/DecreaseIndicator";
 import { SlotText } from "slot-text/react";
 import "slot-text/style.css";
+import { createElement } from "react";
 import { usePreferences } from "@/hooks/usePreferences";
+
+function CurrencyIcon({ code, className }: { code: string; className?: string }) {
+  const resolved = getCurrencyIcon(code);
+  return resolved ? createElement(resolved, { className }) : null;
+}
 
 export function WalletContainer({
   wallet,
@@ -17,9 +23,8 @@ export function WalletContainer({
   const { formatAmount, formatConverted, baseCurrency } = usePreferences();
 
   const { name, balance, transactions, percentage, currencyId } = wallet;
-  const { name: currencyName, symbol } = currencyId;
+  const { name: currencyName } = currencyId;
 
-  const Icon = getCurrencyIcon(currencyName);
   const displayBalance = balance ? formatAmount(balance, { currency: currencyName }) : formatAmount(0, { currency: currencyName });
   const convertedBalance = currencyName !== baseCurrency ? formatConverted(balance ?? 0, currencyName).converted : null;
 
@@ -29,7 +34,7 @@ export function WalletContainer({
         <div className="flex items-center px-4 pt-3 h-15">
           <div className="flex items-center gap-3">
             <div className="bg-landing-primary/10 size-8 rounded-md flex justify-center items-center">
-              {Icon && <Icon className="size-4" />}
+              <CurrencyIcon code={currencyName} className="size-4" />
             </div>
 
             <div className="leading-tight">
@@ -78,7 +83,7 @@ export function WalletContainer({
     <article className="overflow-hidden bg-radial-[at_50%_95%] from-landing-primary/8 to-landing-primary/0 to-70% border border-[#484847]/5 rounded-lg shadow-2xl shadow-black/20 w-[20rem] h-91.25">
       <header className="px-6 pt-6 flex justify-between items-center">
         <div className="bg-landing-primary/10 size-10 rounded-lg flex justify-center items-center">
-          {Icon && <Icon className="size-5" />}
+          <CurrencyIcon code={currencyName} className="size-5" />
         </div>
         <div>
           <p
