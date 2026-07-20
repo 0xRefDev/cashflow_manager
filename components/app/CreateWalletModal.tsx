@@ -10,6 +10,7 @@ import { Cancel } from "@/icons/Cancel";
 
 import { currencyService } from "@/services/client/currencies.services";
 import { walletService } from "@/services/client/wallet.services";
+import { sileo } from "sileo";
 import { Currency } from "@/types/currencies.types";
 import { Wallet } from "@/types/wallet.types";
 
@@ -80,8 +81,29 @@ export function CreateWalletModal({ open, onClose, onSaved, wallet }: CreateWall
             });
       onSaved(savedWallet);
       onClose();
+      sileo.success({
+        title: isEditMode ? "Wallet Updated" : "Wallet Created",
+        description: <span className="text-center">{name.trim()}</span>,
+        fill: "black",
+        styles: {
+          title: "text-white!",
+          description: "text-white/75!",
+          badge: "bg-white/5!",
+        },
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save wallet");
+      const message = err instanceof Error ? err.message : "Failed to save wallet";
+      setError(message);
+      sileo.error({
+        title: "Something went wrong",
+        description: <span className="text-center">{message}</span>,
+        fill: "black",
+        styles: {
+          title: "text-white!",
+          description: "text-white/75!",
+          badge: "bg-white/5!",
+        },
+      });
     } finally {
       setIsSubmitting(false);
     }
