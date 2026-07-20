@@ -17,63 +17,41 @@ import {
   TooltipTrigger,
 } from "@/components/app/helpers/ClientTooltip";
 
-type Sale = {
-  date: Date;
+export type Sale = {
+  date: string | Date;
   amount: number;
   percentage: string;
   currency: string;
   growth: boolean;
+  type?: "income" | "expense";
 };
 
-const sales = [
-  { date: "2023-04-30", amount: 4 },
-  { date: "2023-05-01", amount: 6, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-02", amount: 8, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-03", amount: 7, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-04", amount: 8, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-05", amount: 12, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-06", amount: 10.5, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-07", amount: 6, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-08", amount: 8, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-09", amount: 7.5, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-10", amount: 6, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-11", amount: 8, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-12", amount: 9, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-13", amount: 10, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-14", amount: 17, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-15", amount: 14, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-16", amount: 15, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-17", amount: 20, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-18", amount: 18, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-19", amount: 16, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-20", amount: 15, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-21", amount: 16, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-22", amount: 13, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-23", amount: 11, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-24", amount: 11, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-25", amount: 13, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-26", amount: 12, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-27", amount: 9, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-28", amount: 8, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-29", amount: 10, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-30", amount: 11, percentage: "%", currency: "$", growth: false },
-  { date: "2023-05-31", amount: 8, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-01", amount: 9, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-02", amount: 10, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-03", amount: 12, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-04", amount: 13, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-05", amount: 15, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-06", amount: 13.5, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-07", amount: 13, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-08", amount: 13, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-09", amount: 14, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-10", amount: 13, percentage: "%", currency: "$", growth: false },
-  { date: "2023-06-11", amount: 12.5, percentage: "%", currency: "$", growth: false },
-];
-const data: Sale[] = sales.map((d) => ({ ...d, date: new Date(d.date) }));
+function formatYAxis(value: number): string {
+  if (value >= 1000) {
+    const k = value / 1000;
+    return `${k % 1 === 0 ? k : k.toFixed(1)}k`;
+  }
+  return `${value}`;
+}
 
-export function AnalyticsChart() {
+export function AnalyticsChart({ points = [] }: { points?: Sale[] }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  type ChartDatum = Omit<Sale, "date"> & { date: Date };
+
+  const data: ChartDatum[] = points.map((d) => ({
+    ...d,
+    date: new Date(d.date),
+  }));
+
+  if (data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full text-white/40">
+        <p className="text-lg">No movement data yet</p>
+        <p className="text-sm mt-1">Add transactions to see your wealth evolution</p>
+      </div>
+    );
+  }
 
   const xScale = scaleTime()
     .domain([data[0].date, data[data.length - 1].date])
@@ -83,12 +61,12 @@ export function AnalyticsChart() {
     .domain([0, max(data.map((d) => d.amount)) ?? 0])
     .range([100, 0]);
 
-  const line = d3line<Sale>()
+  const line = d3line<ChartDatum>()
     .x((d) => xScale(d.date))
     .y((d) => yScale(d.amount))
     .curve(curveMonotoneX);
 
-  const area = d3area<Sale>()
+  const area = d3area<ChartDatum>()
     .x((d) => xScale(d.date))
     .y0(yScale(0))
     .y1((d) => yScale(d.amount))
@@ -99,29 +77,59 @@ export function AnalyticsChart() {
 
   if (!d) return null;
 
+  const targetTicks = 6;
+  const candidates =
+    data.length <= targetTicks
+      ? data.map((_, i) => i)
+      : Array.from(
+          { length: targetTicks },
+          (_, k) => Math.round((k * (data.length - 1)) / (targetTicks - 1)),
+        );
+
+  const MIN_LABEL_GAP = 13;
+  const xIndices: number[] = [];
+  candidates.forEach((i, k) => {
+    const isFirst = k === 0;
+    const isLast = k === candidates.length - 1;
+    const x = xScale(data[i].date);
+
+    if (isFirst) {
+      xIndices.push(i);
+      return;
+    }
+
+    const lastX = xScale(data[xIndices[xIndices.length - 1]].date);
+    if (x - lastX >= MIN_LABEL_GAP) {
+      xIndices.push(i);
+    } else if (isLast) {
+      xIndices[xIndices.length - 1] = i;
+    }
+  });
+
+  const plotBox: CSSProperties = {
+    top: "var(--marginTop)",
+    left: "var(--marginLeft)",
+    width: "calc(100% - var(--marginLeft) - var(--marginRight))",
+    height: "calc(100% - var(--marginTop) - var(--marginBottom))",
+  };
+
   return (
     <div
-      className="relative z-10 h-72 w-full"
+      className="relative z-10 h-full w-full min-h-70"
       style={
         {
-          "--marginTop": "0px",
-          "--marginRight": "0px",
-          "--marginBottom": "0px",
-          "--marginLeft": "25px",
+          "--marginTop": "16px",
+          "--marginRight": "16px",
+          "--marginBottom": "34px",
+          "--marginLeft": "48px",
         } as CSSProperties
       }
     >
-      {/* Chart area */}
-      <svg
-        className="absolute inset-0
-          h-[calc(100%-var(--marginTop)-var(--marginBottom))]
-          w-full
-          translate-y-(--marginTop)
-          overflow-visible"
-      >
+      {/* Plot area: line + area + gridlines + tooltips */}
+      <svg className="absolute overflow-visible" style={plotBox}>
         <svg
           viewBox="0 0 100 100"
-          className="overflow-visible"
+          className="overflow-visible h-full w-full"
           preserveAspectRatio="none"
         >
           <defs>
@@ -138,6 +146,21 @@ export function AnalyticsChart() {
               />
             </linearGradient>
           </defs>
+
+          {/* Horizontal gridlines */}
+          {yScale.ticks(5).map((v) => (
+            <line
+              key={`grid-${v}`}
+              x1={0}
+              x2={100}
+              y1={yScale(v)}
+              y2={yScale(v)}
+              stroke="currentColor"
+              strokeWidth={0.5}
+              className="text-white/10"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
 
           <AnimatedArea>
             <path d={areaPath ?? undefined} fill="url(#semiAreaGradient)" />
@@ -159,7 +182,7 @@ export function AnalyticsChart() {
                   onPointerEnter={() => setActiveIndex(index)}
                   onPointerLeave={() => setActiveIndex(null)}
                 >
-                  {/* Línea vertical al hacer hover */}
+                  {/* Vertical guide on hover */}
                   <line
                     x1={xScale(point.date)}
                     y1={0}
@@ -171,7 +194,7 @@ export function AnalyticsChart() {
                     vectorEffect="non-scaling-stroke"
                     style={{ pointerEvents: "none" }}
                   />
-                  {/* Rect invisible para capturar hover */}
+                  {/* Invisible capture rect */}
                   <rect
                     x={(() => {
                       const prevX =
@@ -204,89 +227,82 @@ export function AnalyticsChart() {
                   {formatDate(point.date)}
                 </p>
                 <p className="text-zinc-400 text-sm">
-                  ${point.amount.toLocaleString("en-US")}
+                  {point.currency}
+                  {point.amount.toLocaleString("en-US")}
+                  {point.type ? ` · ${point.type}` : ""}
                 </p>
               </TooltipContent>
             </ClientTooltip>
           ))}
         </svg>
+      </svg>
 
-        {/* Círculo del punto activo — SVG sin distorsión */}
-        <svg
-          className="absolute inset-0 w-full h-full overflow-visible"
-          style={{ pointerEvents: "none" }}
-        >
-          {activeIndex !== null && (
-            <circle
-              cx={`${xScale(data[activeIndex].date)}%`}
-              cy={`${yScale(data[activeIndex].amount)}%`}
-              r={4}
+      {/* Active point indicator */}
+      <svg className="absolute overflow-visible pointer-events-none" style={plotBox}>
+        {activeIndex !== null && (
+          <circle
+            cx={`${xScale(data[activeIndex].date)}%`}
+            cy={`${yScale(data[activeIndex].amount)}%`}
+            r={4}
+            fill="currentColor"
+            className="text-[#00a241] dark:text-[#2dfc2d]"
+          />
+        )}
+      </svg>
+
+      {/* Y axis labels */}
+      <svg
+        className="absolute overflow-visible"
+        style={{
+          top: "var(--marginTop)",
+          left: 0,
+          width: "var(--marginLeft)",
+          height: "calc(100% - var(--marginTop) - var(--marginBottom))",
+        }}
+      >
+        {yScale.ticks(5).map((v) => (
+          <text
+            key={`y-${v}`}
+            x={40}
+            y={`${yScale(v)}%`}
+            textAnchor="end"
+            dominantBaseline="middle"
+            className="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400"
+            fill="currentColor"
+          >
+            {formatYAxis(v)}
+          </text>
+        ))}
+      </svg>
+
+      {/* X axis labels */}
+      <svg
+        className="absolute overflow-visible"
+        style={{
+          top: "calc(100% - var(--marginBottom))",
+          left: "var(--marginLeft)",
+          width: "calc(100% - var(--marginLeft) - var(--marginRight))",
+          height: "var(--marginBottom)",
+        }}
+      >
+        {xIndices.map((i) => {
+          const day = data[i];
+          const isFirst = i === xIndices[0];
+          const isLast = i === xIndices[xIndices.length - 1];
+          return (
+            <text
+              key={`x-${i}`}
+              x={`${xScale(day.date)}%`}
+              y="55%"
+              textAnchor={isFirst ? "start" : isLast ? "end" : "middle"}
+              dominantBaseline="middle"
+              className="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400"
               fill="currentColor"
-              className="text-[#00a241] dark:text-[#2dfc2d]"
-            />
-          )}
-        </svg>
-
-        {/* Y axis */}
-        {/* <svg
-          className="absolute inset-0
-            h-[calc(100%-var(--marginTop)-var(--marginBottom))]
-            translate-y-(--marginTop)
-            overflow-visible"
-        >
-          <g className="translate-x-[98%]">
-            {yScale
-              .ticks(8)
-              .map(yScale.tickFormat(8, "d"))
-              .map((value, i) => {
-                if (i < 1) return;
-                return (
-                  <text
-                    key={i}
-                    y={`${yScale(+value)}%`}
-                    alignmentBaseline="middle"
-                    textAnchor="end"
-                    className="text-xs tabular-nums text-zinc-400 dark:text-zinc-100"
-                    fill="currentColor"
-                  >
-                    {value}
-                  </text>
-                );
-              })}
-          </g>
-        </svg> */}
-
-        {/* X axis */}
-        <svg
-          className="absolute inset-0
-            h-[calc(100%-var(--marginTop))]
-            w-[calc(100%-var(--marginLeft)-var(--marginRight))]
-            translate-x-(--marginLeft)
-            translate-y-(--marginTop)
-            overflow-visible"
-        >
-          {data.map((day, i) => {
-            if (i % 6 !== 0 || i === 0 || i >= data.length - 3) return;
-            return (
-              <g
-                key={i}
-                className="overflow-visible text-zinc-500 dark:text-zinc-200 -translate-y-3"
-              >
-                <text
-                  x={`${xScale(day.date)}%`}
-                  y="100%"
-                  textAnchor={
-                    i === 0 ? "start" : i === data.length - 1 ? "end" : "middle"
-                  }
-                  fill="currentColor"
-                  className="text-sm"
-                >
-                  {formatDate(day.date)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+            >
+              {formatDate(day.date)}
+            </text>
+          );
+        })}
       </svg>
     </div>
   );
