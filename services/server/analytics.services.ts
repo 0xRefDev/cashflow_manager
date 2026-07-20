@@ -2,6 +2,9 @@
 
 import Wallet from "@/models/Wallets";
 import Movements from "@/models/Movements";
+import Preferences from "@/models/Preferences";
+import Currencies from "@/models/Currencies";
+import { getExchangeRates, convertAmount } from "@/services/server/exchangeRates.services";
 
 export async function getFinancialSummary(userId: string) {
   const wallets = await Wallet.find({ userId }).populate("currencyId");
@@ -87,15 +90,58 @@ export async function getChartData(userId: string, period: "30d" | "6m" | "1y" =
     date: { $gte: startDate }
   })
     .sort({ date: 1 })
-    .populate("walletId")
+    .populate({
+      path: "walletId",
+      populate: { path: "currencyId" }
+    })
     .lean();
 
-  const data = movements.map(m => ({
-    date: (m.date as Date).toISOString(),
-    quantity: m.quantity,
-    type: m.type,
-    currency: (m.walletId as any)?.currencyId || null
-  }));
+  type PopulatedMovement = {
+    date: Date;
+    quantity: number;
+    type: "income" | "expense";
+    walletId?: {
+      currencyId?: { name?: string; symbol?: string } | null;
+    } | null;
+  };
+
+  const typedMovements = movements as unknown as PopulatedMovement[];
+
+  const preferences = await Preferences.findOne({ userId }).lean<{
+    baseCurrency?: string;
+  } | null>();
+  const baseCurrency = preferences?.baseCurrency ?? "USD";
+
+  const rates = (await getExchangeRates())?.rates ?? {};
+
+  const baseCurrencyDoc = await Currencies.findOne({ name: baseCurrency }).lean<{
+    symbol?: string;
+  } | null>();
+  const baseSymbol = baseCurrencyDoc?.symbol ?? "$";
+
+  const dailyNet = new Map<string, number>();
+  for (const m of typedMovements) {
+    const dayKey = (m.date as Date).toISOString().slice(0, 10);
+    const sign = m.type === "income" ? 1 : -1;
+    const fromCode = m.walletId?.currencyId?.name ?? baseCurrency;
+    const converted = convertAmount(m.quantity * sign, fromCode, baseCurrency, rates);
+    dailyNet.set(dayKey, (dailyNet.get(dayKey) ?? 0) + converted);
+  }
+
+  const dayKeys = Array.from(dailyNet.keys()).sort();
+  let running = 0;
+  const data = dayKeys.map((dayKey) => {
+    const net = dailyNet.get(dayKey) ?? 0;
+    running += net;
+    return {
+      date: new Date(`${dayKey}T00:00:00`).toISOString(),
+      amount: Math.round(running * 100) / 100,
+      type: (net >= 0 ? "income" : "expense") as "income" | "expense",
+      currency: baseSymbol,
+      percentage: "%",
+      growth: running >= 0,
+    };
+  });
 
   return { period, data };
 }
@@ -103,14 +149,23 @@ export async function getChartData(userId: string, period: "30d" | "6m" | "1y" =
 export async function getWalletDistribution(userId: string) {
   const wallets = await Wallet.find({ userId }).populate("currencyId");
 
-  const totalBalance = wallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+  type PopulatedWallet = {
+    _id: string;
+    name: string;
+    balance: number;
+    currencyId?: { symbol?: string } | null;
+  };
 
-  const distribution = wallets.map(w => ({
+  const typedWallets = wallets as unknown as PopulatedWallet[];
+
+  const totalBalance = typedWallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+
+  const distribution = typedWallets.map((w) => ({
     walletId: w._id,
     name: w.name,
     balance: w.balance,
     percentage: totalBalance > 0 ? Math.round((w.balance / totalBalance) * 10000) / 100 : 0,
-    currency: (w.currencyId as any)?.code || null
+    currency: w.currencyId?.symbol ?? null
   }));
 
   return distribution;
