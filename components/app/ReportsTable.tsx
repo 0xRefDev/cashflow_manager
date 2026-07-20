@@ -10,6 +10,7 @@ import { Edit } from "@/icons/app/Edit";
 import { Trash } from "@/icons/app/Trash";
 
 import { ChevronRight } from "@/icons/ChevronRight";
+import { usePreferences } from "@/hooks/usePreferences";
 
 interface ReportsTableExtendedProps extends ReportsTableProps {
   isLoading?: boolean;
@@ -29,6 +30,7 @@ export function ReportsTable({
   onDelete,
 }: ReportsTableExtendedProps) {
   const hasActions = onEdit && onDelete;
+  const { formatConverted } = usePreferences();
 
   return (
     <div className="overflow-x-auto">
@@ -88,12 +90,18 @@ export function ReportsTable({
               const walletName = isMovement ? report.walletId.name : "N/A";
 
               const displayAmount = formatAmount ? formatAmount(amount, currencyName) : `${symbol}${amount.toLocaleString()}`;
+              const converted = formatConverted(amount, currencyName).converted;
 
               return (
                 <tr key={isMovement ? report._id : idx} className="hover:bg-[#1a1a1a] transition-colors">
                   <td className={`p-4 pt-5.5 flex items-center gap-2 font-semibold font-manrope ${type === "income" ? "text-landing-primary" : "text-[#FF7351]"}`}>
                     {type === "income" ? <Add className="w-4.5 h-4.5" /> : <Minus className="w-4.5 h-4.5" />}
-                    {displayAmount}
+                    <div className="flex flex-col">
+                      <span>{displayAmount}</span>
+                      {converted && (
+                        <span className="text-[11px] font-normal text-white/40">{converted}</span>
+                      )}
+                    </div>
                   </td>
                   <td className="pl-8 py-4 text-white/80 text-center">
                     <div className="flex items-center justify-center w-fit bg-[#20201F] p-2 rounded-xl" title={`${walletName} | ${symbol}`}>
