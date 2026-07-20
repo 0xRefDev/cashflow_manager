@@ -1,5 +1,13 @@
 import { usePreferencesStore } from "@/store/usePreferencesStore";
 import { formatCurrency, maskAmount, FormatCurrencyOptions } from "@/utils/formatCurrency";
+import { useRates } from "@/hooks/useRates";
+import { convertAmount } from "@/utils/currency";
+
+export interface ConvertedResult {
+  native: string;
+  converted: string | null;
+  combined: string;
+}
 
 export function usePreferences() {
   const {
@@ -17,11 +25,38 @@ export function usePreferences() {
     reset,
   } = usePreferencesStore();
 
+  const rates = useRates();
+
   const formatAmount = (amount: number, options?: Partial<FormatCurrencyOptions>) =>
     formatCurrency(amount, { currency: baseCurrency, mask: mask_balance, ...options });
 
   const maskValue = (amount: number, options?: Partial<FormatCurrencyOptions>) =>
     maskAmount(amount, { currency: baseCurrency, ...options });
+
+  const formatConverted = (
+    amount: number,
+    fromCode: string,
+    options?: Partial<FormatCurrencyOptions>,
+  ): ConvertedResult => {
+    const base = baseCurrency ?? "USD";
+    const native = formatCurrency(amount, {
+      currency: fromCode,
+      mask: mask_balance,
+      ...options,
+    });
+
+    if (fromCode === base) {
+      return { native, converted: null, combined: native };
+    }
+
+    const converted = formatCurrency(convertAmount(amount, fromCode, base, rates), {
+      currency: base,
+      mask: mask_balance,
+      ...options,
+    });
+
+    return { native, converted, combined: `${native} (≈ ${converted})` };
+  };
 
   return {
     maskBalance: mask_balance,
@@ -40,5 +75,6 @@ export function usePreferences() {
 
     formatAmount,
     maskValue,
+    formatConverted,
   };
 }
