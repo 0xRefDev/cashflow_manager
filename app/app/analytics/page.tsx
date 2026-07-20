@@ -1,97 +1,177 @@
 "use client";
 
-import { MainHeader } from "@/components/app/MainHeader";
 import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
+import { MainHeader } from "@/components/app/MainHeader";
+import { Button } from "@/components/Button";
+import { InfoCard } from "@/components/app/InfoCard";
 import { Help } from "@/icons/Help";
-import { Bell } from "@/icons/app/Bell";
+import { Wallet } from "@/icons/Wallet";
 
-import { Select } from "@/components/Select";
-import { AnalyticsCard } from "@/components/app/AnalyticsCard";
-import { AnalyticsChart } from "@/components/app/AnalyticsChart";
+import { analyticsService } from "@/services/client/analytics.services";
+import { AnalyticsChart, type Sale } from "@/components/app/AnalyticsChart";
 
-export default function Page() {
+export default function Analytics() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<{
+    total_savings: number;
+    growth_annual: number;
+    growth_monthly: number;
+    growth_daily: number;
+  } | null>(null);
+  const [chartData, setChartData] = useState<Sale[]>([]);
+  const [period, setPeriod] = useState<"30d" | "6m" | "1y">("30d");
 
   const headerOptions = [
-    {
-      label: <Bell className="w-6 h-6" />,
-      action: () => router.push("/app/notifications"),
-    },
     {
       label: <Help className="w-6 h-6" />,
       action: () => router.push("/app/help"),
     },
   ];
+
+  const periodOptions = [
+    { value: "30d", label: "30 Days" },
+    { value: "6m", label: "6 Months" },
+    { value: "1y", label: "1 Year" },
+  ];
+
+  const fetchSummary = useCallback(async () => {
+    try {
+      const data = await analyticsService.getSummary();
+      setSummary(data);
+    } catch (err) {
+      console.error("Failed to fetch summary:", err);
+    }
+  }, []);
+
+  const fetchChart = useCallback(async () => {
+    try {
+      const res = await analyticsService.getChartData(period);
+      setChartData(res.data ?? []);
+    } catch (err) {
+      console.error("Failed to fetch chart data:", err);
+    }
+  }, [period]);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      await fetchSummary();
+      await fetchChart();
+      setLoading(false);
+    };
+    fetchAll();
+  }, [fetchSummary, , fetchChart]);
+
+  if (loading) {
+    return (
+      <section className="flex flex-col gap-0 min-h-screen text-white">
+        <MainHeader
+          title={
+            <div className="flex items-center gap-2">
+              <p className="text-xl sm:text-2xl font-semibold text-white/90">
+                Analytics{" "}
+                <span className="text-landing-primary"> | Overview</span>
+              </p>
+            </div>
+          }
+          options={headerOptions}
+        />
+
+        <SkeletonTheme baseColor="#1a1a1a" highlightColor="#262626">
+          <article className="p-12 h-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <Skeleton className="h-28 rounded-xl" />
+              <Skeleton className="h-28 rounded-xl" />
+              <Skeleton className="h-28 rounded-xl" />
+            </div>
+            <section className="flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <Skeleton className="h-8 w-48 rounded" />
+                <Skeleton className="h-10 w-40 rounded-md" />
+              </div>
+              <Skeleton className="w-full h-100 rounded-xl" />
+            </section>
+            <section className="mt-12 flex flex-col">
+              <Skeleton className="h-8 w-48 rounded mb-4" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Skeleton className="h-48 rounded-xl" />
+                <Skeleton className="h-48 rounded-xl" />
+                <Skeleton className="h-48 rounded-xl" />
+              </div>
+            </section>
+          </article>
+        </SkeletonTheme>
+      </section>
+    );
+  }
+
   return (
-    <section className="h-full text-white">
+    <section className="flex flex-col gap-0 min-h-screen text-white">
       <MainHeader
         title={
           <div className="flex items-center gap-2">
             <p className="text-xl sm:text-2xl font-semibold text-white/90">
-              Analytics
+              Analytics{" "}
+              <span className="text-landing-primary"> | Overview</span>
             </p>
           </div>
         }
         options={headerOptions}
       />
 
-      <article className="p-6 px-14 mt-4 flex flex-col gap-6">
-        {/* Title, Year and Currency Selectors */}
-        <article className="flex max-w-5xl">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-5xl font-semibold text-white/90 font-manrope">
-              Saving Stats
-            </h2>
-            <p className="text-[#ADAAAA] text-lg max-w-132 mt-1">
-              Advanced metrics and temporal analysis of your wealth accumulation
-              for the year.
-            </p>
-          </div>
-          <div className="ml-auto flex items-end gap-4">
-            <Select
-              options={[
-                { label: "USD ($)", value: "2024" },
-                { label: "2023", value: "2023" },
-                { label: "2022", value: "2022" },
-              ]}
-              defaultValue="2024"
-              onChange={(value) => {
-                console.log("Selected year:", value);
-              }}
-            />
-          </div>
-        </article>
+      <article className="p-12 h-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <InfoCard
+            title="Total Savings"
+            total={summary?.total_savings ?? 0}
+            icon={<Wallet className="w-4 h-4 text-landing-primary/70" />}
+            variant="income"
+            subtitle={`${summary?.growth_annual ? `${summary.growth_annual > 0 ? "+" : ""}${summary.growth_annual}% YoY` : "—"}`}
+          />
+          {/* <InfoCard
+            title="Monthly Growth"
+            total={`${summary?.growth_monthly ?? 0}%`}
+            icon={<Sparks className="w-6 h-6 text-[#6E9BFF]" />}
+            variant="income"
+            subtitle={`${summary?.growth_daily ?? 0}% Today`}
+          />
+          <InfoCard
+            title="Daily Growth"
+            total={`${summary?.growth_daily ?? 0}%`}
+            icon={<Sparks className="w-6 h-6 text-[#FF7351]" />}
+            variant="expense"
+            subtitle="vs yesterday"
+          /> */}
+        </div>
 
-        {/* Pasar data de la DB a los cards */}
-        <section className="flex justify-between items-center max-w-5xl">
-          <AnalyticsCard title="Total Savings" value="$0.00" />
-          <AnalyticsCard title="Monthly Growth %" value="$0.00" />
-          <AnalyticsCard title="Avg Daily Balance" value="$0.00" />
-        </section>
-
-        <section className="h-120 w-full max-w-480 rounded-xl border-[#1F1F1F] border-2 p-0.75">
-          <article className="bg-[#131313] h-full w-full rounded-lg relative overflow-hidden pt-8">
-            {/* Glow Light */}
-            <div className="absolute right-80 -top-50 size-80 bg-landing-primary/25 blur-[10rem] rounded-full pointer-events-none" />
-            {/*  */}
-            <div className="px-6 mb-2 h-[10%]">
-              <h2 className="text-2xl font-bold text-white">Wealth Evolution</h2>
-              <p className="text-[#ADAAAA]">Organic growth of assets across accounts</p>
+        <section className="flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Wealth Evolution</h2>
+            <div className="flex gap-2">
+              {periodOptions.map((opt) => (
+                <Button
+                  key={opt.value}
+                  onClick={() => setPeriod(opt.value as "30d" | "6m" | "1y")}
+                  className={`transition-colors duration-300 px-4 py-2 rounded-lg text-sm ${
+                    period === opt.value
+                      ? "bg-landing-primary text-black"
+                      : "bg-white/10 hover:bg-white/20 text-white/80"
+                  }`}
+                >
+                  {opt.label}
+                </Button>
+              ))}
             </div>
+          </div>
 
-            <article className="flex justify-center items-end w-full h-[88%] relative">
-              <AnalyticsChart />
-              <div className="z-1 absolute bottom-0 left-0 w-full h-[88%] flex flex-col justify-between px-10">
-                <div className="w-full h-px bg-[#48484763]" />
-                <div className="w-full h-px bg-[#48484763]" />
-                <div className="w-full h-px bg-[#48484763]" />
-                <div className="w-full h-px bg-transparent" />
-              </div>
-            </article>
-
-          </article>
-        </section>
+          <div className="w-full h-100 rounded-xl bg-[#111] border border-white/10 p-6">
+            <AnalyticsChart points={chartData} />
+          </div>
+        </section>   
       </article>
     </section>
   );
