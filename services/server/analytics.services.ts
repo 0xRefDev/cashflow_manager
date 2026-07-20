@@ -8,8 +8,15 @@ import { getExchangeRates, convertAmount } from "@/services/server/exchangeRates
 
 export async function getFinancialSummary(userId: string) {
   const wallets = await Wallet.find({ userId }).populate("currencyId");
-  
-  const totalSavings = wallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+
+  const prefs = await Preferences.findOne({ userId }).lean<{ baseCurrency?: string } | null>();
+  const baseCurrency = prefs?.baseCurrency ?? "USD";
+  const rates = (await getExchangeRates())?.rates ?? {};
+
+  const totalSavings = wallets.reduce((sum, w) => {
+    const code = (w.currencyId as { name?: string } | null)?.name ?? baseCurrency;
+    return sum + convertAmount(w.balance || 0, code, baseCurrency, rates);
+  }, 0);
 
   const now = new Date();
   const startOfYear = new Date(now.getFullYear(), 0, 1);
