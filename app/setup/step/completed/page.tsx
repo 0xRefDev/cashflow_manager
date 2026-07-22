@@ -74,7 +74,7 @@ export default function Completed() {
               </div>
 
               <Link
-                href="auth/login"
+                href="/auth/login"
                 className="group bg-landing-primary text-[#042b17] px-8 lg:px-10 2xl:px-12 py-2 lg:py-3 rounded-2xl font-bold text-base 2xl:text-lg flex items-center gap-3 hover:bg-landing-primary/80 transition-all duration-200 animate-fade-up animate-delay-200"
                 style={{
                   boxShadow: "0 12px 28px rgba(13,234,121,0.05), 0 0 0 1px rgba(13,234,121,0.10)",
