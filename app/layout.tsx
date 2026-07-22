@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ToastProvider from "@/components/ToasterComponent";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Cashflow | Expenses Manager",
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col scroll-smooth">
         {children}
         <ToastProvider />
+        <Analytics />
       </body>
     </html>
   );
