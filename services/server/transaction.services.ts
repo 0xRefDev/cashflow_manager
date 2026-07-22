@@ -32,7 +32,8 @@ async function canUseTransactions() {
 
     supportsTransactions = Boolean(hello.setName);
   } catch {
-    supportsTransactions = false;
+    supportsTransactions = null;
+    return false;
   }
 
   return supportsTransactions;
@@ -46,26 +47,54 @@ async function checkSpendLimit(userId: string, newExpense: number) {
   const limit = prefs?.spend_limit ?? 0;
   if (limit <= 0) return;
 
+  const baseCurrency = prefs?.baseCurrency ?? "USD";
+
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [agg] = await Movements.aggregate([
+  const { getExchangeRates, convertAmount: convert } = await import("@/services/server/exchangeRates.services");
+  const rates = (await getExchangeRates())?.rates ?? {};
+
+  const aggMovements = await Movements.aggregate([
     { $match: { userId, type: "expense", date: { $gte: startOfMonth } } },
-    { $group: { _id: null, total: { $sum: "$quantity" } } },
+    {
+      $lookup: {
+        from: "wallets",
+        localField: "walletId",
+        foreignField: "_id",
+        as: "wallet",
+        pipeline: [{ $project: { currencyId: 1 } }],
+      },
+    },
+    { $unwind: "$wallet" },
+    {
+      $lookup: {
+        from: "currencies",
+        localField: "wallet.currencyId",
+        foreignField: "_id",
+        as: "currency",
+        pipeline: [{ $project: { name: 1 } }],
+      },
+    },
+    { $unwind: "$currency" },
+    { $project: { quantity: 1, currencyCode: "$currency.name" } },
   ]);
 
-  const totalAfter = agg?.total ?? 0;
+  const totalAfter = aggMovements.reduce((sum, m) => {
+    const converted = convert(m.quantity, m.currencyCode ?? baseCurrency, baseCurrency, rates);
+    return sum + (converted ?? m.quantity);
+  }, 0);
+
   const totalBefore = totalAfter - newExpense;
 
   if (totalAfter > limit && totalBefore <= limit) {
-    const base = prefs?.baseCurrency ?? "USD";
     await createNotification({
       userId,
       category: "Financial",
       title: "Spend limit exceeded",
-      message: `You've spent ${formatCurrency(totalAfter, { currency: base })} of your ${formatCurrency(limit, { currency: base })} limit this month`,
-      payload: { totalAfter, limit, baseCurrency: base },
+      message: `You've spent ${formatCurrency(totalAfter, { currency: baseCurrency })} of your ${formatCurrency(limit, { currency: baseCurrency })} limit this month`,
+      payload: { totalAfter, limit, baseCurrency },
     });
   }
 }
@@ -133,8 +162,7 @@ async function addTransactionWithRollback(transactionData: NewTransaction) {
 
   try {
     const createdTransaction = await Movements.create(transactionData);
-    
-    // Create Financial notification
+
     const currency = await getWalletCurrency(transactionData.walletId);
     await createNotification({
       userId: transactionData.userId,
@@ -152,6 +180,17 @@ async function addTransactionWithRollback(transactionData: NewTransaction) {
     
     return createdTransaction;
   } catch (err) {
+    if ((err as { code?: number }).code === 11000) {
+      const existing = await Movements.findOne({
+        userId: transactionData.userId,
+        walletId: transactionData.walletId,
+        title: transactionData.title,
+        quantity: transactionData.quantity,
+        type: transactionData.type,
+        date: transactionData.date,
+      }).lean();
+      if (existing) return existing;
+    }
     await Wallet.updateOne(
       { _id: walletId, userId },
       { $inc: { balance: type === "income" ? -quantity : quantity } }

@@ -49,7 +49,12 @@ export function usePreferences() {
       return { native, converted: null, combined: native };
     }
 
-    const converted = formatCurrency(convertAmount(amount, fromCode, base, rates), {
+    const rawConverted = convertAmount(amount, fromCode, base, rates);
+    if (rawConverted === null) {
+      return { native, converted: null, combined: native };
+    }
+
+    const converted = formatCurrency(rawConverted, {
       currency: base,
       mask: mask_balance,
       ...options,

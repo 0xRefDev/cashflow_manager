@@ -21,11 +21,14 @@ import { Trash } from "@/icons/app/Trash";
 import { walletService } from "@/services/client/wallet.services";
 import { Wallet } from "@/types/wallet.types";
 import { usePreferences } from "@/hooks/usePreferences";
+import { useRates } from "@/hooks/useRates";
+import { convertAmount } from "@/utils/currency";
 import { sileo } from "sileo";
 
 export default function Page() {
   const router = useRouter();
-  const { formatAmount } = usePreferences();
+  const { formatAmount, baseCurrency } = usePreferences();
+  const rates = useRates();
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,11 +36,17 @@ export default function Page() {
   const [deletingWallet, setDeletingWallet] = useState<Wallet | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const totalBalance = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
-  const walletDistribution = wallets.map((wallet) => ({
-    name: wallet.name,
-    value: totalBalance > 0 ? (wallet.balance / totalBalance) * 100 : 0,
-  }));
+  const totalBalance = wallets.reduce((sum, wallet) => {
+    const converted = convertAmount(wallet.balance, wallet.currencyId.name, baseCurrency, rates);
+    return sum + (converted ?? 0);
+  }, 0);
+  const walletDistribution = wallets.map((wallet) => {
+    const converted = convertAmount(wallet.balance, wallet.currencyId.name, baseCurrency, rates) ?? 0;
+    return {
+      name: wallet.name,
+      value: totalBalance > 0 ? (converted / totalBalance) * 100 : 0,
+    };
+  });
 
   useEffect(() => {
     walletService

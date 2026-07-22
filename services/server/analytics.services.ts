@@ -15,7 +15,8 @@ export async function getFinancialSummary(userId: string) {
 
   const totalSavings = wallets.reduce((sum, w) => {
     const code = (w.currencyId as { name?: string } | null)?.name ?? baseCurrency;
-    return sum + convertAmount(w.balance || 0, code, baseCurrency, rates);
+    const converted = convertAmount(w.balance || 0, code, baseCurrency, rates);
+    return sum + (converted ?? 0);
   }, 0);
 
   const now = new Date();
@@ -132,7 +133,7 @@ export async function getChartData(userId: string, period: "30d" | "6m" | "1y" =
     const sign = m.type === "income" ? 1 : -1;
     const fromCode = m.walletId?.currencyId?.name ?? baseCurrency;
     const converted = convertAmount(m.quantity * sign, fromCode, baseCurrency, rates);
-    dailyNet.set(dayKey, (dailyNet.get(dayKey) ?? 0) + converted);
+    dailyNet.set(dayKey, (dailyNet.get(dayKey) ?? 0) + (converted ?? 0));
   }
 
   const dayKeys = Array.from(dailyNet.keys()).sort();
@@ -156,24 +157,36 @@ export async function getChartData(userId: string, period: "30d" | "6m" | "1y" =
 export async function getWalletDistribution(userId: string) {
   const wallets = await Wallet.find({ userId }).populate("currencyId");
 
+  const prefs = await Preferences.findOne({ userId }).lean<{ baseCurrency?: string } | null>();
+  const baseCurrency = prefs?.baseCurrency ?? "USD";
+  const rates = (await getExchangeRates())?.rates ?? {};
+
   type PopulatedWallet = {
     _id: string;
     name: string;
     balance: number;
-    currencyId?: { symbol?: string } | null;
+    currencyId?: { name?: string; symbol?: string } | null;
   };
 
   const typedWallets = wallets as unknown as PopulatedWallet[];
 
-  const totalBalance = typedWallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+  const totalBalance = typedWallets.reduce((sum, w) => {
+    const code = (w.currencyId as { name?: string } | null)?.name ?? baseCurrency;
+    const converted = convertAmount(w.balance || 0, code, baseCurrency, rates);
+    return sum + (converted ?? 0);
+  }, 0);
 
-  const distribution = typedWallets.map((w) => ({
-    walletId: w._id,
-    name: w.name,
-    balance: w.balance,
-    percentage: totalBalance > 0 ? Math.round((w.balance / totalBalance) * 10000) / 100 : 0,
-    currency: w.currencyId?.symbol ?? null
-  }));
+  const distribution = typedWallets.map((w) => {
+    const code = (w.currencyId as { name?: string } | null)?.name ?? baseCurrency;
+    const convertedBalance = convertAmount(w.balance || 0, code, baseCurrency, rates) ?? 0;
+    return {
+      walletId: w._id,
+      name: w.name,
+      balance: w.balance,
+      percentage: totalBalance > 0 ? Math.round((convertedBalance / totalBalance) * 10000) / 100 : 0,
+      currency: w.currencyId?.symbol ?? null
+    };
+  });
 
   return distribution;
 }

@@ -24,7 +24,12 @@ export async function getExchangeRates(): Promise<RatesTable | null> {
   if (!isStale) return cached;
 
   try {
-    const res = await fetch(API_URL);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const res = await fetch(API_URL, { signal: controller.signal });
+    clearTimeout(timeout);
+
     if (!res.ok) throw new Error(`Exchange rate API returned ${res.status}`);
 
     const json = await res.json();
@@ -50,12 +55,12 @@ export function convertAmount(
   from: string,
   to: string,
   rates: Record<string, number>,
-): number {
+): number | null {
   if (from === to) return amount;
 
   const fromRate = from === "USD" ? 1 : rates[from];
   const toRate = to === "USD" ? 1 : rates[to];
-  if (!fromRate || !toRate) return amount;
+  if (!fromRate || !toRate) return null;
 
   const usdAmount = amount / fromRate;
   return usdAmount * toRate;
